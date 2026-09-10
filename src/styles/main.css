@@ -1,0 +1,294 @@
+:root {
+  --blog-max-width: 920px;
+
+  /* 品牌渐变：珊瑚玫瑰 -> 橙 -> 琥珀，跨三个暖色色相，避免单一色系 */
+  --grad-brand: linear-gradient(118deg, #f43f5e 0%, #f97316 52%, #fbbf24 100%);
+  --grad-brand-soft: linear-gradient(
+    118deg,
+    rgba(244, 63, 94, 0.13),
+    rgba(249, 115, 22, 0.13) 52%,
+    rgba(251, 191, 36, 0.13)
+  );
+  --grad-text: linear-gradient(118deg, #e11d48, #ea580c 52%, #d97706);
+
+  --blog-bg: #f6f9fb;
+  --blog-surface: #ffffff;
+  --blog-border: rgba(15, 23, 42, 0.08);
+  --blog-shadow: 0 12px 32px rgba(15, 23, 42, 0.09);
+  --blog-header-bg: rgba(255, 255, 255, 0.82);
+  --blog-accent-text: #c2410c;
+  --blog-on-brand: #3f1116;
+
+  /* 让 Element Plus 控件跟随品牌色 */
+  --el-color-primary: #ea580c;
+  --el-color-primary-light-3: #ef9d5c;
+  --el-color-primary-light-5: #f4bd8f;
+  --el-color-primary-light-7: #f8d8bd;
+  --el-color-primary-light-8: #fbe6d4;
+  --el-color-primary-light-9: #fdf2e8;
+  --el-color-primary-dark-2: #c2410c;
+}
+
+html.dark {
+  --grad-brand: linear-gradient(118deg, #fb7185 0%, #fb923c 52%, #fcd34d 100%);
+  --grad-brand-soft: linear-gradient(
+    118deg,
+    rgba(251, 113, 133, 0.16),
+    rgba(251, 146, 60, 0.16) 52%,
+    rgba(252, 211, 77, 0.16)
+  );
+  --grad-text: linear-gradient(118deg, #fb7185, #fb923c 52%, #fbbf24);
+
+  --blog-bg: #0f1115;
+  --blog-surface: #171a20;
+  --blog-border: rgba(255, 255, 255, 0.09);
+  --blog-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --blog-header-bg: rgba(15, 17, 21, 0.82);
+  --blog-accent-text: #fdba74;
+  --blog-on-brand: #3f1116;
+
+  --el-color-primary: #fb923c;
+  --el-color-primary-light-3: #cb7330;
+  --el-color-primary-light-5: #a15d2a;
+  --el-color-primary-light-7: #774523;
+  --el-color-primary-light-8: #5f3a21;
+  --el-color-primary-light-9: #492f20;
+  --el-color-primary-dark-2: #fca55f;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--el-text-color-primary);
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+
+  /* 页面顶部一层很淡的渐变底，作为整体氛围铺垫 */
+  background-color: var(--blog-bg);
+  background-image: linear-gradient(
+    180deg,
+    rgba(244, 63, 94, 0.1) 0%,
+    rgba(249, 115, 22, 0.05) 26%,
+    rgba(251, 191, 36, 0) 52%
+  );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+html.dark body {
+  background-image: linear-gradient(
+    180deg,
+    rgba(251, 113, 133, 0.1) 0%,
+    rgba(251, 146, 60, 0.05) 26%,
+    rgba(252, 211, 77, 0) 52%
+  );
+}
+
+:focus-visible {
+  outline: 2px solid #ea580c;
+  outline-offset: 2px;
+}
+
+html.dark :focus-visible {
+  outline-color: #fb923c;
+}
+
+.blog-container {
+  max-width: var(--blog-max-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.page {
+  padding-top: 28px;
+  padding-bottom: 56px;
+}
+
+.page-head {
+  margin-bottom: 20px;
+}
+
+.page-head h1 {
+  position: relative;
+  display: inline-block;
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  font-size: 26px;
+}
+
+.page-head h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 48px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--grad-brand);
+}
+
+/* 文章标签在卡片和详情页共用一套渐变样式 */
+.post-tags .el-tag {
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  background-image: var(--grad-brand-soft);
+  color: var(--blog-accent-text);
+  font-weight: 500;
+}
+
+.post-tags .el-tag.el-tag--info {
+  background-image: var(--grad-brand);
+  color: var(--blog-on-brand);
+  font-weight: 600;
+}
+
+/* markdown 正文排版 */
+.markdown-body {
+  line-height: 1.8;
+  font-size: 16px;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.markdown-body h2 {
+  position: relative;
+  margin: 40px 0 14px;
+  padding-left: 14px;
+  font-size: 21px;
+}
+
+.markdown-body h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.24em;
+  bottom: 0.24em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--grad-brand);
+}
+
+.markdown-body a {
+  color: var(--blog-accent-text);
+  text-decoration-color: rgba(234, 88, 12, 0.4);
+  text-underline-offset: 3px;
+}
+
+.markdown-body a:hover {
+  text-decoration-color: currentColor;
+}
+
+.markdown-body pre {
+  padding: 14px 16px;
+  border: 1px solid var(--blog-border);
+  border-radius: 8px;
+  overflow-x: auto;
+  background: #f6f8fa;
+}
+
+html.dark .markdown-body pre {
+  background: #1d1e1f;
+}
+
+/* 深色模式下覆盖 highlight.js 浅色主题 */
+html.dark .markdown-body pre code.hljs {
+  background: #1d1e1f;
+  color: #c9d1d9;
+}
+
+html.dark .hljs-comment,
+html.dark .hljs-quote {
+  color: #8b949e;
+}
+
+html.dark .hljs-keyword,
+html.dark .hljs-selector-tag,
+html.dark .hljs-doctag {
+  color: #ff7b72;
+}
+
+html.dark .hljs-string,
+html.dark .hljs-regexp,
+html.dark .hljs-addition {
+  color: #a5d6ff;
+}
+
+html.dark .hljs-title,
+html.dark .hljs-section,
+html.dark .hljs-function .hljs-title {
+  color: #d2a8ff;
+}
+
+html.dark .hljs-built_in,
+html.dark .hljs-type,
+html.dark .hljs-attr,
+html.dark .hljs-attribute,
+html.dark .hljs-number,
+html.dark .hljs-literal {
+  color: #79c0ff;
+}
+
+html.dark .hljs-name,
+html.dark .hljs-tag {
+  color: #7ee787;
+}
+
+.markdown-body code {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 14px;
+}
+
+/* 行内代码用渐变底衬托，代码块内的不受影响 */
+.markdown-body :not(pre) > code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background-image: var(--grad-brand-soft);
+  color: var(--blog-accent-text);
+}
+
+.markdown-body blockquote {
+  margin: 20px 0;
+  padding: 10px 16px;
+  border-left: 4px solid;
+  border-image: var(--grad-brand) 1;
+  border-radius: 0 8px 8px 0;
+  background-image: var(--grad-brand-soft);
+  color: var(--el-text-color-secondary);
+}
+
+.markdown-body table {
+  width: 100%;
+  margin: 20px 0;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 9px 12px;
+  border: 1px solid var(--blog-border);
+  text-align: left;
+}
+
+.markdown-body thead th {
+  border-bottom: none;
+  background-image: var(--grad-brand-soft);
+  color: var(--blog-accent-text);
+}
+
+.markdown-body hr {
+  height: 2px;
+  margin: 32px 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--grad-brand);
+  opacity: 0.5;
+}
