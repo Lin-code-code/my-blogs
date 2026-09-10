@@ -1,21 +1,23 @@
 <script setup>
-import { Cpu, Football, Message, Reading, School } from '@element-plus/icons-vue'
+import { Cpu, Football, Iphone, Message, Reading, School } from '@element-plus/icons-vue'
 
 // 个人信息集中在这里修改即可
 const profile = {
-  name: '你的名字',
-  tagline: '一句话介绍自己，比如：热爱前端开发，也热爱一切有趣的事物。',
-  school: 'XX 大学',
-  major: '你的专业',
-  email: 'you@example.com',
-  techStack: ['Vue 3', 'JavaScript', 'Node.js', 'Element Plus', 'Git'],
-  hobbies: ['编程', '阅读', '摄影', '旅行'],
+  name: '林',
+  tagline: 'AI应用开发、全栈开发',
+  school: '惠州学院',
+  major: '数据科学与大数据技术',
+  phone: '138-0000-0000',
+  email: 'lwx6867@qq.com',
+  techStack: ['Python', 'Java', 'PostgreSQL', 'MySQL', 'FastAPI','LangChain', 'LangGraph', 'JavaScript', 'Node.js', 'Vue 3', 'Vite', 'Element Plus', 'Git'],
+  hobbies: ['羽毛球', '乒乓球', '追剧', '音乐', '旅行'],
 }
 
 // 单值信息行，避免模板里重复结构
 const infoRows = [
   { label: '学校', icon: School, value: profile.school },
   { label: '专业', icon: Reading, value: profile.major },
+  { label: '手机号', icon: Iphone, value: profile.phone },
   { label: '邮箱', icon: Message, value: profile.email },
 ]
 </script>
@@ -65,10 +67,6 @@ const infoRows = [
         </div>
       </dl>
     </section>
-
-    <p class="about-text">
-      这是我的个人博客，基于 Vue 3 + Vite + Element Plus 搭建，文章为 Markdown 文件，构建为纯静态站点。
-    </p>
   </div>
 </template>
 
