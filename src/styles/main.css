@@ -67,25 +67,31 @@ body {
   color: var(--el-text-color-primary);
   font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
 
-  /* 页面顶部一层很淡的渐变底，作为整体氛围铺垫 */
   background-color: var(--blog-bg);
+  /* 壁纸作为全局背景，上面叠加暖白半透明层保证文字可读 */
   background-image: linear-gradient(
-    180deg,
-    rgba(244, 63, 94, 0.1) 0%,
-    rgba(249, 115, 22, 0.05) 26%,
-    rgba(251, 191, 36, 0) 52%
-  );
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+      180deg,
+      rgba(250, 246, 242, 0.68) 0%,
+      rgba(250, 246, 242, 0.8) 100%
+    ),
+    url('../assets/blog-bg.jpg');
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
 }
 
 html.dark body {
   background-image: linear-gradient(
-    180deg,
-    rgba(251, 113, 133, 0.1) 0%,
-    rgba(251, 146, 60, 0.05) 26%,
-    rgba(252, 211, 77, 0) 52%
-  );
+      180deg,
+      rgba(15, 17, 21, 0.68) 0%,
+      rgba(15, 17, 21, 0.84) 100%
+    ),
+    url('../assets/blog-bg.jpg');
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
 }
 
 :focus-visible {
