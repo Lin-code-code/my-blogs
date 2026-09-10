@@ -1,0 +1,133 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// 当前文件位于 vite/ 目录，posts 目录在项目根目录下
+const here = fileURLToPath(import.meta.url)
+const POSTS_DIR = path.resolve(path.dirname(here), '../posts')
+
+// slug 只允许 ASCII 字母、数字、连字符和下划线，防止路径穿越
+const SLUG_RE = /^[A-Za-z0-9_-]+$/
+
+function resolvePostFile(slug) {
+  if (!slug || typeof slug !== 'string' || !SLUG_RE.test(slug)) {
+    return null
+  }
+  return path.resolve(POSTS_DIR, `${slug}.md`)
+}
+
+// 用 JSON 字符串作为 YAML 双引号标量，避免日期、冒号、引号等产生解析歧义
+function yamlScalar(value) {
+  return JSON.stringify(String(value ?? ''))
+}
+
+function buildMarkdown(data) {
+  const title = yamlScalar(data.title || '未命名')
+  const date = yamlScalar(data.date || new Date().toISOString().slice(0, 10))
+  const category = yamlScalar(data.category || '未分类')
+  const summary = yamlScalar(data.summary || '')
+  const tags = (Array.isArray(data.tags) ? data.tags.filter(Boolean) : []).map((tag) =>
+    yamlScalar(tag)
+  )
+
+  return [
+    '---',
+    `title: ${title}`,
+    `date: ${date}`,
+    `tags: [${tags.join(', ')}]`,
+    `category: ${category}`,
+    `summary: ${summary}`,
+    '---',
+    '',
+    String(data.content || '').trimEnd(),
+    '',
+  ].join('\n')
+}
+
+async function readJson(req) {
+  const chunks = []
+  for await (const chunk of req) {
+    chunks.push(chunk)
+  }
+  const raw = Buffer.concat(chunks).toString('utf8')
+  if (!raw) {
+    return {}
+  }
+  try {
+    return JSON.parse(raw)
+  } catch {
+    throw new Error('请求体不是有效的 JSON')
+  }
+}
+
+function sendJson(res, status, payload) {
+  res.statusCode = status
+  res.setHeader('Content-Type', 'application/json; charset=utf-8')
+  res.end(JSON.stringify(payload))
+}
+
+// 仅在 dev server 启用的写文件 API，生产构建不会注册
+export function blogPlugin() {
+  return {
+    name: 'blog-write-api',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url || '/', 'http://localhost')
+
+        if (!url.pathname.startsWith('/__blog__/posts')) {
+          return next()
+        }
+
+        try {
+          fs.mkdirSync(POSTS_DIR, { recursive: true })
+
+          if (req.method === 'GET') {
+            return sendJson(res, 200, { ok: true, dir: POSTS_DIR })
+          }
+
+          if (req.method === 'POST') {
+            const data = await readJson(req)
+            const file = resolvePostFile(data.slug)
+            if (!file) {
+              return sendJson(res, 400, { ok: false, message: 'slug 不合法' })
+            }
+            if (fs.existsSync(file)) {
+              return sendJson(res, 409, { ok: false, message: '该 slug 已存在' })
+            }
+            fs.writeFileSync(file, buildMarkdown(data), 'utf8')
+            return sendJson(res, 200, { ok: true, slug: data.slug })
+          }
+
+          const slug = url.pathname.slice('/__blog__/posts'.length).replace(/^\/+/, '')
+          const file = resolvePostFile(slug)
+
+          if (!file) {
+            return sendJson(res, 400, { ok: false, message: 'slug 不合法' })
+          }
+
+          if (req.method === 'PUT') {
+            const data = await readJson(req)
+            if (!fs.existsSync(file)) {
+              return sendJson(res, 404, { ok: false, message: '文章不存在' })
+            }
+            fs.writeFileSync(file, buildMarkdown(data), 'utf8')
+            return sendJson(res, 200, { ok: true, slug })
+          }
+
+          if (req.method === 'DELETE') {
+            if (!fs.existsSync(file)) {
+              return sendJson(res, 404, { ok: false, message: '文章不存在' })
+            }
+            fs.unlinkSync(file)
+            return sendJson(res, 200, { ok: true, slug })
+          }
+
+          return sendJson(res, 405, { ok: false, message: '方法不支持' })
+        } catch (error) {
+          return sendJson(res, 500, { ok: false, message: error.message || '服务端错误' })
+        }
+      })
+    },
+  }
+}
