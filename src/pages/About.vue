@@ -7,7 +7,7 @@ const profile = {
   tagline: 'AI应用开发、全栈开发',
   school: '惠州学院',
   major: '数据科学与大数据技术',
-  phone: '138-0000-0000',
+  phone: '17876526243',
   email: 'lwx6867@qq.com',
   techStack: ['Python', 'Java', 'PostgreSQL', 'MySQL', 'FastAPI','LangChain', 'LangGraph', 'JavaScript', 'Node.js', 'Vue 3', 'Vite', 'Element Plus', 'Git'],
   hobbies: ['羽毛球', '乒乓球', '追剧', '音乐', '旅行'],
