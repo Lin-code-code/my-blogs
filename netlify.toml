@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Netlify 站点部署在根路径，需要覆盖 GitHub Pages 使用的仓库子路径
+  VITE_BASE_PATH = "/"
