@@ -207,6 +207,21 @@ class AccountUpdateTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_accepts_common_password_after_rule_removal(self):
+        self.client.force_login(self.user)
+        response = self.post_account(
+            {
+                "username": "admin-old",
+                "current_password": "old-password-123",
+                "new_password": "password",
+                "confirm_password": "password",
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("password"))
+
     def test_updates_password_and_keeps_session(self):
         self.client.force_login(self.user)
         response = self.post_account(
