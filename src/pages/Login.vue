@@ -45,8 +45,7 @@ async function submit() {
       <h1>管理员登录</h1>
       <p>登录后可以进入写文章页面。</p>
 
-      <form @submit.prevent="submit">
-        <el-form label-position="top">
+      <el-form label-position="top">
           <el-form-item label="用户名">
             <el-input v-model="username" autocomplete="username" placeholder="请输入用户名" />
           </el-form-item>
@@ -59,11 +58,10 @@ async function submit() {
               placeholder="请输入密码"
             />
           </el-form-item>
-          <el-button type="primary" native-type="submit" :loading="submitting" class="submit">
+          <el-button type="primary" :loading="submitting" class="submit" @click="submit">
             登录
           </el-button>
-        </el-form>
-      </form>
+      </el-form>
     </div>
   </div>
 </template>
