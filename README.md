@@ -73,7 +73,7 @@ vite/blogPlugin.js     开发服务器上的文章写入 API（仅本地生效�
 
 部署前确认两点：
 
-1. 仓库名与 `vite.config.js` 里的 `base` 一致，默认是 `/my_blogs/`。
+1. 仓库名与 `vite.config.js` 里的 `base` 一致，默认是 `/my-blogs/`。
 2. 仓库 Settings → Pages → Source 选择 `GitHub Actions`。
 
 换用其他静态托管平台时，把 `base` 改成 `/` 即可。
