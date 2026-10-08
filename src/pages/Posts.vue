@@ -91,7 +91,10 @@ function clearFilters() {
 
 <style scoped>
 .posts-page {
-  max-width: var(--blog-max-width);
+  width: 100%;
+  max-width: none;
+  padding-left: clamp(20px, 3vw, 48px);
+  padding-right: clamp(20px, 3vw, 48px);
 }
 
 .page-desc {
@@ -104,7 +107,7 @@ function clearFilters() {
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr);
   align-items: stretch;
-  min-height: 560px;
+  min-height: calc(100vh - 230px);
   overflow: hidden;
 }
 
