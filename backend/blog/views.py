@@ -161,3 +161,16 @@ def account_update(request):
     request.user.save()
     update_session_auth_hash(request, request.user)
     return JsonResponse(_user_payload(request.user))
+
+
+@require_GET
+def draft_list(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"message": "请先登录管理员账号"}, status=403)
+
+    posts = list(
+        Post.objects.filter(draft=True)
+        .order_by("-updated_at", "-id")
+        .values("id", "slug", "title", "date", "category", "summary", "updated_at")
+    )
+    return JsonResponse(posts, safe=False, json_dumps_params={"ensure_ascii": False})

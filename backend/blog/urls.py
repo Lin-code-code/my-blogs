@@ -9,4 +9,5 @@ urlpatterns = [
     path("api/v1/auth/logout/", views.auth_logout, name="auth-logout"),
     path("api/v1/auth/account/", views.account_update, name="auth-account"),
     path("api/v1/admin/posts/", views.post_create, name="post-create"),
+    path("api/v1/admin/drafts/", views.draft_list, name="draft-list"),
 ]

@@ -68,8 +68,9 @@ async function submit() {
 
 <style scoped>
 .login-page {
-  display: flex;
-  justify-content: center;
+  flex: 1;
+  display: grid;
+  place-items: center;
 }
 
 .login-card {

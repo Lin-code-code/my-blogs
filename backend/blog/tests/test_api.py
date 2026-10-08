@@ -240,4 +240,44 @@ class AccountUpdateTests(TestCase):
 
         me = self.client.get("/api/v1/auth/me/")
         self.assertTrue(me.json()["authenticated"])
+class DraftApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.staff = get_user_model().objects.create_user(
+            username="draft-writer",
+            password="password-123",
+            is_staff=True,
+        )
+        Post.objects.create(
+            slug="draft-one",
+            title="草稿一",
+            date="2026-10-01",
+            tags=["Django"],
+            category="技术",
+            summary="草稿摘要",
+            content="草稿正文",
+            draft=True,
+        )
+        Post.objects.create(
+            slug="published-one",
+            title="已发布",
+            date="2026-10-02",
+            content="公开正文",
+            draft=False,
+        )
+
+    def test_guest_cannot_view_drafts(self):
+        response = self.client.get("/api/v1/admin/drafts/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_staff_only_sees_drafts(self):
+        self.client.force_login(self.staff)
+        response = self.client.get("/api/v1/admin/drafts/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["slug"] for item in response.json()], ["draft-one"])
+        self.assertEqual(
+            set(response.json()[0]),
+            {"id", "slug", "title", "date", "category", "summary", "updated_at"},
+        )
 

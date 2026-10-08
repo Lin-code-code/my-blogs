@@ -6,3 +6,7 @@ export function createPost(data) {
     body: data,
   })
 }
+
+export function listDrafts() {
+  return apiRequest('/api/v1/admin/drafts/')
+}

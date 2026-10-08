@@ -21,6 +21,16 @@ async function handleLogout() {
   }
 }
 
+function handleCreateCommand(command) {
+  if (command === 'new') {
+    router.push('/editor')
+    return
+  }
+  if (command === 'drafts') {
+    router.push('/drafts')
+  }
+}
+
 async function handleAccountCommand(command) {
   if (command === 'account') {
     router.push('/account')
@@ -52,14 +62,28 @@ const menus = [
           >
             {{ m.label }}
           </router-link>
-          <router-link
+          <el-dropdown
             v-if="isStaff"
-            to="/editor"
-            class="nav-item"
-            :class="{ active: route.path.startsWith('/editor') }"
+            trigger="click"
+            placement="bottom-end"
+            @command="handleCreateCommand"
           >
-            写文章
-          </router-link>
+            <button
+              type="button"
+              class="nav-item nav-dropdown-button"
+              :class="{ active: route.path.startsWith('/editor') || route.path === '/drafts' }"
+              aria-label="创作菜单"
+              aria-haspopup="menu"
+            >
+              创作
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="new">新增文章</el-dropdown-item>
+                <el-dropdown-item command="drafts">草稿箱</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-dropdown
             v-if="isAuthenticated"
             trigger="click"
@@ -191,6 +215,13 @@ const menus = [
   font-weight: 600;
 }
 
+.nav-dropdown-button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 .account-trigger {
   display: inline-flex;
   align-items: center;
@@ -230,6 +261,8 @@ const menus = [
 .main {
   flex: 1;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .footer {
