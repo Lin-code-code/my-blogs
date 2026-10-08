@@ -27,13 +27,15 @@ npm run preview
 
 ## 写文章
 
-在 `posts/` 目录下新建 `.md` 文件即可，文件名就是文章地址里的 slug，
-例如 `posts/my-first-post.md` 对应 `#/post/my-first-post`。构建时会自动扫描该目录，
+在 `src/posts/` 目录下新建 `.md` 文件即可，文件名就是文章地址里的 slug，
+例如 `src/posts/my-first-post.md` 对应 `#/post/my-first-post`。构建时会自动扫描该目录，
 无需手动注册。
 
-本地开发时也可以直接在网页里写文章：运行 `npm run dev` 后，点击顶栏的「写文章」，
-填写标题、分类、标签、摘要，正文使用带工具栏的 Markdown 编辑器。保存后会直接写入
-`posts/` 目录；编辑已有文章时可修改或删除。该入口只在开发环境显示，构建部署后自动隐藏。
+本地开发时也可以直接在网页里写文章：运行 `npm run dev` 后，在「全部文章」页点右上角的
+「添加文章」，填写标题、分类、标签、日期、摘要和草稿状态，正文使用带工具栏的 Markdown
+编辑器。保存时文件名由开发服务器按秒级时间戳生成（如 `20261008153012.md`），写入
+`src/posts/`；同一秒内重复创建会自动追加序号。编辑已有文章时可修改或删除。该入口只在开发
+环境显示，构建部署后自动隐藏。
 
 frontmatter 字段：
 
@@ -44,21 +46,26 @@ date: 2026-09-10
 tags: [Vue, 前端]
 category: 技术
 summary: 列表页显示的摘要，不填则自动截取正文
+draft: false
 ---
 ```
+
+`draft: true` 的文章不会出现在文章列表、首页和上下篇导航里，但可以用详情页直链预览。
 
 ## 目录结构
 
 ```
-posts/                 Markdown 文章
 src/
+  posts/                Markdown 文章
   components/          通用组件（文章卡片）
   layout/AppLayout.vue 顶栏、页脚、深色模式切换
-  pages/               首页、文章列表、文章详情、关于
+  pages/               首页、文章列表、文章详情、文章编辑、关于
   router/index.js      路由配置
   styles/main.css      全局样式与 Markdown 排版
   utils/blog.js        扫描文章、解析 frontmatter、筛选与渲染
+  utils/editorApi.js   文章写入接口的调用封装
   utils/useDarkMode.js 深色模式组合式函数
+vite/blogPlugin.js     开发服务器上的文章写入 API（仅本地生效）
 ```
 
 ## 部署到 GitHub Pages
@@ -74,6 +81,6 @@ src/
 
 ## 已知取舍
 
-- 不带评论系统和后台管理，文章直接写 Markdown 文件。
+- 不带评论系统和线上后台，文章直接写 Markdown 文件，网页编辑只在本地开发服务器可用。
+- 文章文件名即地址，创建后不会随标题变化。
 - 路由使用 hash 模式，静态托管无需服务端重写规则。
-- 网页编辑功能依赖本地开发服务器写文件，静态部署后为只读模式。

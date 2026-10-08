@@ -5,3 +5,6 @@ dist
 
 # Local Netlify folder
 .netlify
+
+# 本地变更记录，不入库
+changelog.md
