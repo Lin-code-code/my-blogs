@@ -10,14 +10,18 @@ import {
   ElMessage,
   ElSwitch,
 } from 'element-plus'
+import { MdEditor } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
 import { useAuth } from '../utils/auth.js'
+import { useDarkMode } from '../utils/useDarkMode.js'
 import { usePosts } from '../utils/blog.js'
 import { createPost } from '../utils/editorApi.js'
 
 const route = useRoute()
 const router = useRouter()
+const { isDark } = useDarkMode()
 const { isStaff, loadCurrentUser } = useAuth()
-const { loadPosts, render } = usePosts()
+const { loadPosts } = usePosts()
 
 const form = ref({
   title: '',
@@ -25,12 +29,11 @@ const form = ref({
   category: '',
   summary: '',
   draft: true,
-  content: '',
+  content: '# 新文章\n\n在这里开始写作...\n',
 })
 const tagsText = ref('')
 const saving = ref(false)
-const preview = computed(() => render(form.value.content))
-const hasContent = computed(() => Boolean(form.value.content.trim()))
+const editorTheme = computed(() => (isDark.value ? 'dark' : 'light'))
 
 function parseTags(text) {
   return String(text || '')
@@ -99,89 +102,77 @@ onMounted(async () => {
       <el-button text @click="goBack">返回</el-button>
       <div class="editor-title">
         <h1>添加文章</h1>
-        <p>左侧编辑内容，右侧实时查看 Markdown 渲染效果。</p>
+        <p>使用双栏 Markdown 编辑器编写文章，右侧实时预览。</p>
       </div>
       <el-button type="primary" :loading="saving" @click="save">保存文章</el-button>
     </header>
 
-    <div class="editor-layout">
-      <section class="editor-panel editor-form-panel">
-        <el-form label-position="top" class="editor-form">
-          <div class="panel-heading">
-            <span class="panel-index">01</span>
-            <div>
-              <h2>基本信息</h2>
-              <p>标题、分类、标签和摘要会用于文章列表展示。</p>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <el-form-item label="标题" required class="full-width">
-              <el-input v-model="form.title" placeholder="文章标题" />
-            </el-form-item>
-            <el-form-item label="分类">
-              <el-input v-model="form.category" placeholder="例如：技术 / 随笔" />
-            </el-form-item>
-            <el-form-item label="标签">
-              <el-input v-model="tagsText" placeholder="用逗号分隔，例如：Vue, 前端" />
-            </el-form-item>
-            <el-form-item label="日期">
-              <el-date-picker
-                v-model="form.date"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="选择日期"
-                class="date-picker"
-              />
-            </el-form-item>
-            <el-form-item label="状态">
-              <div class="draft-row">
-                <el-switch v-model="form.draft" />
-                <span class="field-hint">{{ form.draft ? '保存为草稿' : '直接发布' }}</span>
-              </div>
-            </el-form-item>
-          </div>
-
-          <el-form-item label="摘要">
-            <el-input
-              v-model="form.summary"
-              type="textarea"
-              :rows="3"
-              placeholder="列表页显示的简短摘要，可留空"
-            />
-          </el-form-item>
-
-          <div class="panel-heading content-heading">
-            <span class="panel-index">02</span>
-            <div>
-              <h2>正文 Markdown</h2>
-              <p>支持 Markdown、代码块和原始 HTML。</p>
-            </div>
-          </div>
-
-          <el-form-item required>
-            <el-input
-              v-model="form.content"
-              type="textarea"
-              :autosize="{ minRows: 20, maxRows: 40 }"
-              placeholder="在这里编写 Markdown 正文"
-            />
-          </el-form-item>
-        </el-form>
-      </section>
-
-      <aside class="preview-panel" aria-label="Markdown 实时预览">
-        <div class="panel-heading preview-heading">
-          <span class="panel-index">03</span>
-          <div>
-            <h2>实时预览</h2>
-            <p>预览效果与文章详情页保持一致。</p>
-          </div>
+    <section class="meta-panel">
+      <div class="panel-heading">
+        <span class="panel-index">01</span>
+        <div>
+          <h2>基本信息</h2>
+          <p>标题、分类、标签和摘要会用于文章列表展示。</p>
         </div>
-        <div v-if="hasContent" class="markdown-body preview-content" v-html="preview"></div>
-        <div v-else class="preview-empty">在左侧输入正文后，这里会显示预览。</div>
-      </aside>
-    </div>
+      </div>
+
+      <el-form label-position="top" class="meta-form">
+        <div class="form-grid">
+          <el-form-item label="标题" required class="full-width">
+            <el-input v-model="form.title" placeholder="文章标题" />
+          </el-form-item>
+          <el-form-item label="分类">
+            <el-input v-model="form.category" placeholder="例如：技术 / 随笔" />
+          </el-form-item>
+          <el-form-item label="标签">
+            <el-input v-model="tagsText" placeholder="用逗号分隔，例如：Vue, 前端" />
+          </el-form-item>
+          <el-form-item label="日期">
+            <el-date-picker
+              v-model="form.date"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="选择日期"
+              class="date-picker"
+            />
+          </el-form-item>
+          <el-form-item label="状态">
+            <div class="draft-row">
+              <el-switch v-model="form.draft" />
+              <span class="field-hint">{{ form.draft ? '保存为草稿' : '直接发布' }}</span>
+            </div>
+          </el-form-item>
+        </div>
+
+        <el-form-item label="摘要">
+          <el-input
+            v-model="form.summary"
+            type="textarea"
+            :rows="2"
+            placeholder="列表页显示的简短摘要，可留空"
+          />
+        </el-form-item>
+      </el-form>
+    </section>
+
+    <section class="editor-shell">
+      <div class="panel-heading editor-heading">
+        <span class="panel-index">02</span>
+        <div>
+          <h2>正文 Markdown</h2>
+          <p>工具栏支持标题、列表、代码块、链接、表格和全屏预览。</p>
+        </div>
+      </div>
+      <MdEditor
+        v-model="form.content"
+        class="markdown-editor"
+        :theme="editorTheme"
+        :no-upload-img="true"
+        :show-code-row-number="true"
+        :sync-scroll="true"
+        preview
+      />
+    </section>
   </div>
 </template>
 
@@ -210,39 +201,31 @@ onMounted(async () => {
   font-size: 13px;
 }
 
-.editor-layout {
-  display: grid;
-  grid-template-columns: minmax(460px, 1.05fr) minmax(380px, 0.95fr);
-  align-items: start;
-  gap: 22px;
-}
-
-.editor-panel,
-.preview-panel {
+.meta-panel,
+.editor-shell {
   border: 1px solid var(--blog-border);
   border-radius: 14px;
   background-color: var(--blog-surface);
   box-shadow: var(--blog-shadow);
 }
 
-.editor-panel {
-  padding: 24px;
+.meta-panel {
+  margin-bottom: 20px;
+  padding: 22px 24px;
 }
 
-.preview-panel {
-  position: sticky;
-  top: 78px;
-  min-height: 560px;
-  max-height: calc(100vh - 98px);
-  padding: 24px;
-  overflow: auto;
+.editor-shell {
+  padding: 22px 24px 24px;
+}
+
+.editor-heading {
+  margin-bottom: 16px;
 }
 
 .panel-heading {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 20px;
 }
 
 .panel-heading h2 {
@@ -269,15 +252,13 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-.content-heading {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid var(--blog-border);
+.meta-form {
+  margin-top: 18px;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(240px, 1.5fr) minmax(180px, 1fr) repeat(2, minmax(150px, 0.8fr));
   gap: 0 16px;
 }
 
@@ -301,37 +282,14 @@ onMounted(async () => {
   font-size: 12px;
 }
 
-.preview-heading {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  padding-bottom: 14px;
-  background-color: var(--blog-surface);
-}
-
-.preview-content {
-  padding-top: 4px;
-}
-
-.preview-empty {
-  display: grid;
-  min-height: 360px;
-  place-items: center;
-  border: 1px dashed var(--blog-border);
-  border-radius: 10px;
-  color: var(--el-text-color-secondary);
-  font-size: 14px;
+.markdown-editor {
+  height: calc(100vh - 390px);
+  min-height: 560px;
 }
 
 @media (max-width: 1050px) {
-  .editor-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .preview-panel {
-    position: static;
-    min-height: 420px;
-    max-height: none;
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -345,8 +303,8 @@ onMounted(async () => {
     grid-column: 1 / -1;
   }
 
-  .editor-panel,
-  .preview-panel {
+  .meta-panel,
+  .editor-shell {
     padding: 18px;
   }
 
@@ -356,6 +314,10 @@ onMounted(async () => {
 
   .full-width {
     grid-column: auto;
+  }
+
+  .markdown-editor {
+    height: 640px;
   }
 }
 </style>

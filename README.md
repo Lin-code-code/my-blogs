@@ -9,6 +9,7 @@
 - Element Plus
 - Vue Router（hash 模式）
 - markdown-it + highlight.js
+- md-editor-v3 双栏 Markdown 编辑器
 - Django 5.2
 - PostgreSQL 18
 
@@ -82,6 +83,8 @@ src/
   utils/auth.js        Django 登录状态
   utils/blog.js        文章数据与 Markdown 渲染
   utils/editorApi.js   管理员写文章接口
+
+编辑器使用 md-editor-v3，提供工具栏、左右分栏、实时预览、字数统计和同步滚动。
   posts/               旧 Markdown 文章，迁移验证完成前保留
 
 scripts/
