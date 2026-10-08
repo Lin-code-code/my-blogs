@@ -49,6 +49,14 @@ const menus = [
           >
             写文章
           </router-link>
+          <router-link
+            v-if="isStaff"
+            to="/account"
+            class="nav-item"
+            :class="{ active: route.path === '/account' }"
+          >
+            账号设置
+          </router-link>
           <router-link v-if="!isAuthenticated" to="/login" class="nav-item" :class="{ active: route.path === '/login' }">
             登录
           </router-link>

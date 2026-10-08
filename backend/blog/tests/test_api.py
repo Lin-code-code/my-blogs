@@ -119,3 +119,110 @@ class AuthPostApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Post.objects.filter(title="新文章", slug=response.json()["slug"]).exists())
+class AccountUpdateTests(TestCase):
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=True)
+        self.user = get_user_model().objects.create_user(
+            username="admin-old",
+            password="old-password-123",
+            is_staff=True,
+        )
+
+    def csrf(self):
+        self.client.get("/api/v1/auth/me/")
+        return self.client.cookies["csrftoken"].value
+
+    def post_account(self, payload):
+        return self.client.post(
+            "/api/v1/auth/account/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=self.csrf(),
+        )
+
+    def test_guest_cannot_update_account(self):
+        response = self.post_account(
+            {
+                "username": "new-name",
+                "current_password": "old-password-123",
+                "new_password": "",
+                "confirm_password": "",
+            }
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_requires_current_password(self):
+        self.client.force_login(self.user)
+        response = self.post_account(
+            {
+                "username": "new-name",
+                "current_password": "wrong-password",
+                "new_password": "",
+                "confirm_password": "",
+            }
+        )
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_updates_username(self):
+        self.client.force_login(self.user)
+        response = self.post_account(
+            {
+                "username": "new-name",
+                "current_password": "old-password-123",
+                "new_password": "",
+                "confirm_password": "",
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "new-name")
+
+    def test_rejects_duplicate_username(self):
+        get_user_model().objects.create_user(username="occupied", password="password-123")
+        self.client.force_login(self.user)
+        response = self.post_account(
+            {
+                "username": "occupied",
+                "current_password": "old-password-123",
+                "new_password": "",
+                "confirm_password": "",
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_rejects_password_mismatch(self):
+        self.client.force_login(self.user)
+        response = self.post_account(
+            {
+                "username": "admin-old",
+                "current_password": "old-password-123",
+                "new_password": "new-password-456",
+                "confirm_password": "different-password-789",
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_updates_password_and_keeps_session(self):
+        self.client.force_login(self.user)
+        response = self.post_account(
+            {
+                "username": "admin-new",
+                "current_password": "old-password-123",
+                "new_password": "new-password-456",
+                "confirm_password": "new-password-456",
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "admin-new")
+        self.assertTrue(self.user.check_password("new-password-456"))
+
+        me = self.client.get("/api/v1/auth/me/")
+        self.assertTrue(me.json()["authenticated"])
+

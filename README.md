@@ -52,13 +52,14 @@ npm run dev
 前端：http://127.0.0.1:5173/
 登录：http://127.0.0.1:5173/#/login
 写文章：http://127.0.0.1:5173/#/editor
+账号设置：http://127.0.0.1:5173/#/account
 Django Admin：http://127.0.0.1:8000/admin/
 ```
 
 ## 权限规则
 
 - 游客只能查看文章。
-- 只有登录的 Django `is_staff` 用户才能写文章。
+- 只有登录的 Django `is_staff` 用户才能写文章和修改账号。
 - 登录使用 Django Session 和 CSRF，不使用独立编辑口令。
 - 写文章接口：`POST /api/v1/admin/posts/`。
 - 公开文章接口：`GET /api/v1/posts/`。
@@ -67,7 +68,7 @@ Django Admin：http://127.0.0.1:8000/admin/
 
 `npm run dev` 和 `npm run build` 会通过 `.env` 中的 `BLOG_API_BASE_URL` 调用 Django API，并生成 `src/generated/posts.json` 作为构建时兜底数据。
 
-管理员在前端保存文章后，前端会立即重新请求公开文章接口并刷新页面数据。
+管理员在前端保存文章后，前端会立即重新请求公开文章接口并刷新页面数据。账号设置页可以修改用户名和密码。
 
 ## 目录结构
 
@@ -75,7 +76,7 @@ Django Admin：http://127.0.0.1:8000/admin/
 src/
   components/          通用组件
   layout/              页面布局
-  pages/               首页、文章列表、文章详情、登录、添加文章、关于
+  pages/               首页、文章列表、文章详情、登录、添加文章、账号设置、关于
   router/index.js      前端路由
   utils/api.js         前端 API 请求封装
   utils/auth.js        Django 登录状态

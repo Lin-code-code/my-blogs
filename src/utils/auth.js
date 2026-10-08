@@ -24,6 +24,14 @@ export async function login(username, password) {
   return currentUser.value
 }
 
+export async function updateAccount(payload) {
+  currentUser.value = await apiRequest('/api/v1/auth/account/', {
+    method: 'POST',
+    body: payload,
+  })
+  return currentUser.value
+}
+
 export async function logout() {
   try {
     await apiRequest('/api/v1/auth/logout/', { method: 'POST' })
@@ -39,6 +47,7 @@ export function useAuth() {
     isStaff,
     loadCurrentUser,
     login,
+    updateAccount,
     logout,
   }
 }

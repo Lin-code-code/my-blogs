@@ -48,7 +48,7 @@ async function submit() {
       <form @submit.prevent="submit">
         <el-form label-position="top">
           <el-form-item label="用户名">
-            <el-input v-model="username" autocomplete="username" placeholder="Django 管理员用户名" />
+            <el-input v-model="username" autocomplete="username" placeholder="请输入用户名" />
           </el-form-item>
           <el-form-item label="密码">
             <el-input
@@ -56,7 +56,7 @@ async function submit() {
               type="password"
               show-password
               autocomplete="current-password"
-              placeholder="密码"
+              placeholder="请输入密码"
             />
           </el-form-item>
           <el-button type="primary" native-type="submit" :loading="submitting" class="submit">

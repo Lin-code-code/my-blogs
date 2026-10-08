@@ -1,7 +1,9 @@
 import json
 from datetime import date, datetime
 
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, get_user_model, login, logout, update_session_auth_hash
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -113,3 +115,49 @@ def post_create(request):
         content=content,
     )
     return JsonResponse({"slug": post.slug}, status=201)
+
+
+@require_POST
+def account_update(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"message": "请先登录管理员账号"}, status=403)
+
+    try:
+        payload = _read_json(request)
+    except (ValueError, json.JSONDecodeError) as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+
+    current_password = str(payload.get("current_password") or "")
+    if not request.user.check_password(current_password):
+        return JsonResponse({"message": "当前密码错误"}, status=401)
+
+    username = str(payload.get("username") or "").strip()
+    if not username:
+        return JsonResponse({"message": "用户名不能为空"}, status=400)
+
+    User = get_user_model()
+    if User.objects.exclude(pk=request.user.pk).filter(username__iexact=username).exists():
+        return JsonResponse({"message": "用户名已存在"}, status=400)
+
+    new_password = str(payload.get("new_password") or "")
+    confirm_password = str(payload.get("confirm_password") or "")
+    if new_password:
+        if new_password != confirm_password:
+            return JsonResponse({"message": "两次输入的新密码不一致"}, status=400)
+        try:
+            validate_password(new_password, request.user)
+        except ValidationError as exc:
+            return JsonResponse({"message": " ".join(exc.messages)}, status=400)
+
+    request.user.username = username
+    if new_password:
+        request.user.set_password(new_password)
+    else:
+        try:
+            request.user.full_clean(exclude=["password"])
+        except ValidationError as exc:
+            return JsonResponse({"message": " ".join(exc.messages)}, status=400)
+
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+    return JsonResponse(_user_payload(request.user))
