@@ -74,7 +74,8 @@ async function submit() {
 }
 
 .login-card {
-  width: min(420px, 100%);
+  width: min(400px, 100%);
+  min-height: 320px;
   padding: 28px;
   border: 1px solid var(--blog-border);
   border-radius: 12px;

@@ -30,6 +30,7 @@ const form = ref({
 const tagsText = ref('')
 const saving = ref(false)
 const preview = computed(() => render(form.value.content))
+const hasContent = computed(() => Boolean(form.value.content.trim()))
 
 function parseTags(text) {
   return String(text || '')
@@ -94,78 +95,184 @@ onMounted(async () => {
 
 <template>
   <div class="blog-container page editor-page">
-    <div class="editor-header">
+    <header class="editor-header">
       <el-button text @click="goBack">返回</el-button>
-      <h1>添加文章</h1>
-      <el-button type="primary" :loading="saving" @click="save">保存</el-button>
-    </div>
-
-    <el-form label-position="top" class="editor-form">
-      <div class="form-grid">
-        <el-form-item label="标题" required>
-          <el-input v-model="form.title" placeholder="文章标题" />
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-input v-model="form.category" placeholder="例如：技术 / 随笔" />
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="tagsText" placeholder="用逗号分隔，例如：Vue, 前端" />
-        </el-form-item>
-        <el-form-item label="日期">
-          <el-date-picker
-            v-model="form.date"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="选择日期"
-            class="date-picker"
-          />
-        </el-form-item>
-        <el-form-item label="草稿">
-          <el-switch v-model="form.draft" />
-          <span class="field-hint">草稿不会出现在游客文章列表中</span>
-        </el-form-item>
+      <div class="editor-title">
+        <h1>添加文章</h1>
+        <p>左侧编辑内容，右侧实时查看 Markdown 渲染效果。</p>
       </div>
-      <el-form-item label="摘要">
-        <el-input
-          v-model="form.summary"
-          type="textarea"
-          :rows="2"
-          placeholder="列表页显示的简短摘要，可留空"
-        />
-      </el-form-item>
-      <el-form-item label="正文 Markdown" required>
-        <el-input
-          v-model="form.content"
-          type="textarea"
-          :rows="18"
-          placeholder="在这里编写 Markdown 正文"
-        />
-      </el-form-item>
-    </el-form>
+      <el-button type="primary" :loading="saving" @click="save">保存文章</el-button>
+    </header>
 
-    <section class="preview-section">
-      <h2>实时预览</h2>
-      <div class="markdown-body" v-html="preview"></div>
-    </section>
+    <div class="editor-layout">
+      <section class="editor-panel editor-form-panel">
+        <el-form label-position="top" class="editor-form">
+          <div class="panel-heading">
+            <span class="panel-index">01</span>
+            <div>
+              <h2>基本信息</h2>
+              <p>标题、分类、标签和摘要会用于文章列表展示。</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <el-form-item label="标题" required class="full-width">
+              <el-input v-model="form.title" placeholder="文章标题" />
+            </el-form-item>
+            <el-form-item label="分类">
+              <el-input v-model="form.category" placeholder="例如：技术 / 随笔" />
+            </el-form-item>
+            <el-form-item label="标签">
+              <el-input v-model="tagsText" placeholder="用逗号分隔，例如：Vue, 前端" />
+            </el-form-item>
+            <el-form-item label="日期">
+              <el-date-picker
+                v-model="form.date"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="选择日期"
+                class="date-picker"
+              />
+            </el-form-item>
+            <el-form-item label="状态">
+              <div class="draft-row">
+                <el-switch v-model="form.draft" />
+                <span class="field-hint">{{ form.draft ? '保存为草稿' : '直接发布' }}</span>
+              </div>
+            </el-form-item>
+          </div>
+
+          <el-form-item label="摘要">
+            <el-input
+              v-model="form.summary"
+              type="textarea"
+              :rows="3"
+              placeholder="列表页显示的简短摘要，可留空"
+            />
+          </el-form-item>
+
+          <div class="panel-heading content-heading">
+            <span class="panel-index">02</span>
+            <div>
+              <h2>正文 Markdown</h2>
+              <p>支持 Markdown、代码块和原始 HTML。</p>
+            </div>
+          </div>
+
+          <el-form-item required>
+            <el-input
+              v-model="form.content"
+              type="textarea"
+              :autosize="{ minRows: 20, maxRows: 40 }"
+              placeholder="在这里编写 Markdown 正文"
+            />
+          </el-form-item>
+        </el-form>
+      </section>
+
+      <aside class="preview-panel" aria-label="Markdown 实时预览">
+        <div class="panel-heading preview-heading">
+          <span class="panel-index">03</span>
+          <div>
+            <h2>实时预览</h2>
+            <p>预览效果与文章详情页保持一致。</p>
+          </div>
+        </div>
+        <div v-if="hasContent" class="markdown-body preview-content" v-html="preview"></div>
+        <div v-else class="preview-empty">在左侧输入正文后，这里会显示预览。</div>
+      </aside>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.editor-page {
+  width: 100%;
+  max-width: 1440px;
+}
+
 .editor-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 22px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-.editor-header h1 {
-  flex: 1;
+.editor-title h1 {
+  margin: 0 0 5px;
+  font-size: 26px;
+}
+
+.editor-title p {
   margin: 0;
-  font-size: 24px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
-.editor-form {
-  margin-bottom: 28px;
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(460px, 1.05fr) minmax(380px, 0.95fr);
+  align-items: start;
+  gap: 22px;
+}
+
+.editor-panel,
+.preview-panel {
+  border: 1px solid var(--blog-border);
+  border-radius: 14px;
+  background-color: var(--blog-surface);
+  box-shadow: var(--blog-shadow);
+}
+
+.editor-panel {
+  padding: 24px;
+}
+
+.preview-panel {
+  position: sticky;
+  top: 78px;
+  min-height: 560px;
+  max-height: calc(100vh - 98px);
+  padding: 24px;
+  overflow: auto;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.panel-heading h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.panel-heading p {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.panel-index {
+  display: inline-grid;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  background-image: var(--grad-brand-soft);
+  color: var(--blog-accent-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.content-heading {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--blog-border);
 }
 
 .form-grid {
@@ -174,42 +281,81 @@ onMounted(async () => {
   gap: 0 16px;
 }
 
-.form-grid :deep(.el-form-item:first-child) {
+.full-width {
   grid-column: 1 / -1;
-}
-
-.field-hint {
-  margin-left: 10px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
 }
 
 .date-picker {
   width: 100%;
 }
 
-.preview-section {
-  padding-top: 22px;
-  border-top: 1px solid var(--blog-border);
+.draft-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
 }
 
-.preview-section h2 {
-  margin: 0 0 16px;
-  font-size: 18px;
+.field-hint {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.preview-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-bottom: 14px;
+  background-color: var(--blog-surface);
+}
+
+.preview-content {
+  padding-top: 4px;
+}
+
+.preview-empty {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  border: 1px dashed var(--blog-border);
+  border-radius: 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 1050px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-panel {
+    position: static;
+    min-height: 420px;
+    max-height: none;
+  }
 }
 
 @media (max-width: 680px) {
   .editor-header {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr auto;
   }
 
-  .editor-header h1 {
+  .editor-title {
     order: -1;
-    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .editor-panel,
+  .preview-panel {
+    padding: 18px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
   }
 }
 </style>
