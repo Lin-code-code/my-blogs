@@ -35,8 +35,8 @@ function clearFilters() {
       </div>
     </header>
 
-    <div class="posts-layout">
-      <aside class="filter-panel paper-panel" aria-label="文章筛选">
+    <div class="posts-shell paper-panel">
+      <aside class="filter-panel" aria-label="文章筛选">
         <div class="filter-heading">
           <span class="filter-kicker">Filter</span>
           <h2>搜索与筛选</h2>
@@ -100,17 +100,20 @@ function clearFilters() {
   font-size: 14px;
 }
 
-.posts-layout {
+.posts-shell {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  align-items: start;
-  gap: 22px;
+  grid-template-columns: 270px minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 560px;
+  overflow: hidden;
 }
 
 .filter-panel {
-  position: sticky;
-  top: 84px;
-  padding: 20px 18px;
+  padding: 26px 22px;
+  border-right: 1px solid var(--blog-border);
+  background:
+    linear-gradient(180deg, var(--blog-surface-soft), var(--blog-surface)),
+    var(--blog-surface);
 }
 
 .filter-kicker {
@@ -125,11 +128,11 @@ function clearFilters() {
 
 .filter-heading h2 {
   margin: 0 0 5px;
-  font-size: 20px;
+  font-size: 21px;
 }
 
 .filter-heading p {
-  margin: 0 0 18px;
+  margin: 0 0 20px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
 }
@@ -160,7 +163,7 @@ function clearFilters() {
 
 .filter-divider {
   height: 1px;
-  margin: 20px 0;
+  margin: 22px 0;
   background-color: var(--blog-border);
 }
 
@@ -202,6 +205,10 @@ function clearFilters() {
 
 .post-results {
   min-width: 0;
+  padding: 26px 24px 30px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.08), transparent 34%),
+    var(--blog-surface);
 }
 
 .results-head {
@@ -209,7 +216,9 @@ function clearFilters() {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--blog-border);
 }
 
 .count {
@@ -252,16 +261,19 @@ function clearFilters() {
 }
 
 @media (max-width: 820px) {
-  .posts-layout {
+  .posts-shell {
     grid-template-columns: 1fr;
+    min-height: 0;
   }
 
   .filter-panel {
-    position: static;
+    border-right: 0;
+    border-bottom: 1px solid var(--blog-border);
+    padding: 22px 20px;
   }
 
-  .category-select {
-    margin-top: 10px;
+  .post-results {
+    padding: 22px 20px 26px;
   }
 }
 
