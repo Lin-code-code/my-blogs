@@ -43,7 +43,6 @@ async function handleAccountCommand(command) {
 const menus = [
   { path: '/', label: '首页' },
   { path: '/posts', label: '文章' },
-  { path: '/about', label: '关于' },
 ]
 </script>
 
@@ -84,6 +83,9 @@ const menus = [
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <router-link to="/about" class="nav-item" :class="{ active: route.path === '/about' }">
+            关于
+          </router-link>
           <el-dropdown
             v-if="isAuthenticated"
             trigger="click"

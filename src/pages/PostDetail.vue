@@ -50,11 +50,21 @@ const nav = computed(() => neighbors(route.params.slug))
 
 <style scoped>
 .post-detail-page {
-  max-width: var(--blog-max-width);
+  width: 100%;
+  max-width: min(1440px, calc(100vw - 48px));
 }
 
 .article-shell {
-  padding: 38px 42px 42px;
+  width: 100%;
+  padding: 42px 56px 48px;
+}
+
+.article-header,
+.markdown-body,
+.pager {
+  max-width: 1060px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .article-kicker {
@@ -150,6 +160,10 @@ const nav = computed(() => neighbors(route.params.slug))
 }
 
 @media (max-width: 680px) {
+  .post-detail-page {
+    max-width: 100%;
+  }
+
   .article-shell {
     padding: 26px 22px 30px;
   }
