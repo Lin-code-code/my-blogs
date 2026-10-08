@@ -56,12 +56,12 @@ function toggleTag(tag) {
 
 <style scoped>
 .posts-page {
-  max-width: 1180px;
+  max-width: var(--blog-max-width);
 }
 
 .post-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr;
   align-items: stretch;
   gap: 16px;
 }
