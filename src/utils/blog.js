@@ -17,8 +17,8 @@ const md = new MarkdownIt({
   },
 })
 
-// 构建期扫描 posts 目录下所有 markdown 文件
-const modules = import.meta.glob('/posts/*.md', { eager: true, query: '?raw', import: 'default' })
+// 构建期扫描 src/posts 目录下所有 markdown 文件
+const modules = import.meta.glob('/src/posts/*.md', { eager: true, query: '?raw', import: 'default' })
 
 // gray-matter 依赖 Node 的 Buffer，无法在浏览器运行，这里用 js-yaml 自行解析 frontmatter
 function parseFrontmatter(raw) {
@@ -55,6 +55,7 @@ function parsePosts() {
         date: data.date ? String(data.date) : '',
         tags: Array.isArray(data.tags) ? data.tags : [],
         category: data.category || '未分类',
+        draft: data.draft === true,
         summary: data.summary || content.replace(/[#>*`\-[\]]/g, '').trim().slice(0, 120),
         content,
       }
@@ -63,14 +64,17 @@ function parsePosts() {
 }
 
 const posts = parsePosts()
+// 草稿不进入列表、首页和上下篇导航，但保留在 posts 里供直链预览与编辑
+const published = posts.filter((p) => !p.draft)
 
-// 全部文章（按日期倒序）
+// 全部文章（按日期倒序，不含草稿）
 export function usePosts() {
-  const allPosts = computed(() => posts)
-  const allTags = computed(() => [...new Set(posts.flatMap((p) => p.tags))].sort())
-  const allCategories = computed(() => [...new Set(posts.map((p) => p.category))].sort())
+  const allPosts = computed(() => published)
+  const allTags = computed(() => [...new Set(published.flatMap((p) => p.tags))].sort())
+  const allCategories = computed(() => [...new Set(published.map((p) => p.category))].sort())
 
-  const latest = (n = 5) => computed(() => posts.slice(0, n))
+  const latest = (n = 5) => computed(() => published.slice(0, n))
+  // 直链可以打开草稿做预览，列表里不展示
   const getBySlug = (slug) => posts.find((p) => p.slug === slug)
 
   // 按关键词（标题/摘要/标签）过滤
@@ -91,10 +95,10 @@ export function usePosts() {
 
   // 上一篇 / 下一篇
   const neighbors = (slug) => {
-    const idx = posts.findIndex((p) => p.slug === slug)
+    const idx = published.findIndex((p) => p.slug === slug)
     return {
-      prev: idx > 0 ? posts[idx - 1] : null, // 更新的文章
-      next: idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : null, // 更早的文章
+      prev: idx > 0 ? published[idx - 1] : null, // 更新的文章
+      next: idx >= 0 && idx < published.length - 1 ? published[idx + 1] : null, // 更早的文章
     }
   }
 

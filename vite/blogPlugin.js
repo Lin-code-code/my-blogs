@@ -2,11 +2,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// 当前文件位于 vite/ 目录，posts 目录在项目根目录下
+// 当前文件位于 vite/ 目录，文章目录在项目根的 src/posts 下
 const here = fileURLToPath(import.meta.url)
-const POSTS_DIR = path.resolve(path.dirname(here), '../posts')
+const POSTS_DIR = path.resolve(path.dirname(here), '../src/posts')
 
-// slug 只允许 ASCII 字母、数字、连字符和下划线，防止路径穿越
+// slug 同时是文件名，只允许 ASCII 字母、数字、连字符和下划线，防止路径穿越
 const SLUG_RE = /^[A-Za-z0-9_-]+$/
 
 function resolvePostFile(slug) {
@@ -14,6 +14,21 @@ function resolvePostFile(slug) {
     return null
   }
   return path.resolve(POSTS_DIR, `${slug}.md`)
+}
+
+// 文件名用秒级时间戳；同一秒内重复创建时追加序号兜底，避免覆盖已有文章
+function nextSlug() {
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const base =
+    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+
+  let slug = base
+  for (let i = 1; fs.existsSync(path.resolve(POSTS_DIR, `${slug}.md`)); i += 1) {
+    slug = `${base}-${i}`
+  }
+  return slug
 }
 
 // 用 JSON 字符串作为 YAML 双引号标量，避免日期、冒号、引号等产生解析歧义
@@ -37,6 +52,7 @@ function buildMarkdown(data) {
     `tags: [${tags.join(', ')}]`,
     `category: ${category}`,
     `summary: ${summary}`,
+    `draft: ${data.draft ? 'true' : 'false'}`,
     '---',
     '',
     String(data.content || '').trimEnd(),
@@ -88,15 +104,10 @@ export function blogPlugin() {
 
           if (req.method === 'POST') {
             const data = await readJson(req)
-            const file = resolvePostFile(data.slug)
-            if (!file) {
-              return sendJson(res, 400, { ok: false, message: 'slug 不合法' })
-            }
-            if (fs.existsSync(file)) {
-              return sendJson(res, 409, { ok: false, message: '该 slug 已存在' })
-            }
-            fs.writeFileSync(file, buildMarkdown(data), 'utf8')
-            return sendJson(res, 200, { ok: true, slug: data.slug })
+            // 文件名由服务端生成，前端不参与命名
+            const slug = nextSlug()
+            fs.writeFileSync(resolvePostFile(slug), buildMarkdown(data), 'utf8')
+            return sendJson(res, 200, { ok: true, slug })
           }
 
           const slug = url.pathname.slice('/__blog__/posts'.length).replace(/^\/+/, '')
