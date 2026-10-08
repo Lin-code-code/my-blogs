@@ -4,8 +4,6 @@ const routes = [
   { path: '/', name: 'home', component: () => import('../pages/Home.vue') },
   { path: '/posts', name: 'posts', component: () => import('../pages/Posts.vue') },
   { path: '/post/:slug', name: 'post-detail', component: () => import('../pages/PostDetail.vue') },
-  { path: '/editor', name: 'editor-new', component: () => import('../pages/Editor.vue') },
-  { path: '/editor/:slug', name: 'editor-edit', component: () => import('../pages/Editor.vue') },
   { path: '/about', name: 'about', component: () => import('../pages/About.vue') },
 ]
 

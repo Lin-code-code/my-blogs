@@ -6,5 +6,3 @@
   NODE_VERSION = "20"
   # Netlify 站点部署在根路径，需要覆盖 GitHub Pages 使用的仓库子路径
   VITE_BASE_PATH = "/"
-  # 打开线上「写文章」入口。GitHub Pages 没有 Function，因此不设此项
-  VITE_HAS_EDITOR = "true"

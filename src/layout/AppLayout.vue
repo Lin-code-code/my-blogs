@@ -5,9 +5,6 @@ import { useDarkMode } from '../utils/useDarkMode.js'
 
 const route = useRoute()
 const { isDark, toggle } = useDarkMode()
-// 本地 dev server 有写文章中间件；线上只有配了 VITE_HAS_EDITOR 的环境才有写后端
-const canEdit = import.meta.env.DEV || import.meta.env.VITE_HAS_EDITOR === 'true'
-
 const menus = [
   { path: '/', label: '首页' },
   { path: '/posts', label: '文章' },
@@ -29,9 +26,6 @@ const menus = [
             :class="{ active: route.path === m.path || (m.path === '/posts' && route.path.startsWith('/post')) }"
           >
             {{ m.label }}
-          </router-link>
-          <router-link v-if="canEdit" to="/editor" class="nav-item" :class="{ active: route.path.startsWith('/editor') }">
-            写文章
           </router-link>
           <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
             <el-button text circle class="theme-toggle" @click="toggle">

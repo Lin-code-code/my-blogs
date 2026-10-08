@@ -1,50 +1,16 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Delete } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { usePosts } from '../utils/blog.js'
-import { deletePost } from '../utils/editorApi.js'
 
-const isDev = import.meta.env.DEV
 const route = useRoute()
-const router = useRouter()
 const { getBySlug, neighbors, render } = usePosts()
 
 const post = computed(() => getBySlug(route.params.slug))
 const html = computed(() => (post.value ? render(post.value.content) : ''))
 const nav = computed(() => neighbors(route.params.slug))
-const deleting = ref(false)
 
-// 删除当前文章，仅本地开发环境可用
-async function handleDelete() {
-  if (!post.value) {
-    return
-  }
-
-  try {
-    await ElMessageBox.confirm(`确定删除《${post.value.title}》吗？删除后无法恢复。`, '删除文章', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-    })
-  } catch {
-    return
-  }
-
-  deleting.value = true
-  try {
-    await deletePost(post.value.slug)
-    ElMessage.success('已删除')
-    router.push('/posts')
-    // 刷新页面让构建期的文章扫描重新执行
-    window.setTimeout(() => window.location.reload(), 120)
-  } catch (error) {
-    ElMessage.error(error.message || '删除失败')
-  } finally {
-    deleting.value = false
-  }
-}
 </script>
 
 <template>
@@ -56,17 +22,6 @@ async function handleDelete() {
           <span class="date">{{ post.date }}</span>
           <el-tag v-if="post.category" size="small" type="info">{{ post.category }}</el-tag>
           <el-tag v-for="t in post.tags" :key="t" size="small" effect="plain">{{ t }}</el-tag>
-          <el-button
-            v-if="isDev"
-            class="delete-btn"
-            type="danger"
-            text
-            :loading="deleting"
-            @click="handleDelete"
-          >
-            <el-icon><Delete /></el-icon>
-            删除文章
-          </el-button>
         </div>
         <div class="markdown-body" v-html="html"></div>
       </article>
@@ -130,9 +85,6 @@ async function handleDelete() {
   vertical-align: 1px;
 }
 
-.delete-btn {
-  margin-left: auto;
-}
 
 .pager {
   display: flex;
@@ -176,9 +128,6 @@ async function handleDelete() {
 
 /* 窄屏竖排，避免文章标题被省略号截断 */
 @media (max-width: 560px) {
-  .delete-btn {
-    margin-left: 0;
-  }
 
   .pager {
     flex-direction: column;
@@ -196,3 +145,4 @@ async function handleDelete() {
   }
 }
 </style>
+

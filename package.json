@@ -9,15 +9,14 @@
     "preview": "vite preview",
     "sync-content": "node scripts/sync-content.mjs",
     "predev": "npm run sync-content",
-    "prebuild": "npm run sync-content"
+    "prebuild": "npm run sync-content",
+    "test:sync": "node --test scripts/sync-content.test.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "element-plus": "^2.8.0",
     "highlight.js": "^11.9.0",
-    "js-yaml": "^3.15.2",
     "markdown-it": "^14.1.0",
-    "md-editor-v3": "^6.5.6",
     "vue": "^3.4.0",
     "vue-router": "^4.4.0"
   },
