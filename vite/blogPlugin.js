@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildMarkdown } from '../shared/postMarkdown.js'
 
 // 当前文件位于 vite/ 目录，文章目录在项目根的 src/posts 下
 const here = fileURLToPath(import.meta.url)
@@ -29,35 +30,6 @@ function nextSlug() {
     slug = `${base}-${i}`
   }
   return slug
-}
-
-// 用 JSON 字符串作为 YAML 双引号标量，避免日期、冒号、引号等产生解析歧义
-function yamlScalar(value) {
-  return JSON.stringify(String(value ?? ''))
-}
-
-function buildMarkdown(data) {
-  const title = yamlScalar(data.title || '未命名')
-  const date = yamlScalar(data.date || new Date().toISOString().slice(0, 10))
-  const category = yamlScalar(data.category || '未分类')
-  const summary = yamlScalar(data.summary || '')
-  const tags = (Array.isArray(data.tags) ? data.tags.filter(Boolean) : []).map((tag) =>
-    yamlScalar(tag)
-  )
-
-  return [
-    '---',
-    `title: ${title}`,
-    `date: ${date}`,
-    `tags: [${tags.join(', ')}]`,
-    `category: ${category}`,
-    `summary: ${summary}`,
-    `draft: ${data.draft ? 'true' : 'false'}`,
-    '---',
-    '',
-    String(data.content || '').trimEnd(),
-    '',
-  ].join('\n')
 }
 
 async function readJson(req) {

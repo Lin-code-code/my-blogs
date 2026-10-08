@@ -7,9 +7,17 @@ import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { useDarkMode } from '../utils/useDarkMode.js'
 import { usePosts } from '../utils/blog.js'
-import { createPost, updatePost, deletePost } from '../utils/editorApi.js'
+import {
+  createPost,
+  updatePost,
+  deletePost,
+  getPassword,
+  setPassword,
+} from '../utils/editorApi.js'
 
 const isDev = import.meta.env.DEV
+// 本地靠 dev server 中间件写文件；线上靠 Netlify Function 提交到仓库
+const canEdit = isDev || import.meta.env.VITE_HAS_EDITOR === 'true'
 const route = useRoute()
 const router = useRouter()
 const { isDark } = useDarkMode()
@@ -29,6 +37,7 @@ const form = ref({
   content: '# 新文章\n\n在这里开始写作...\n',
 })
 const tagsText = ref('')
+const password = ref(getPassword())
 const saving = ref(false)
 
 function parseTags(text) {
@@ -55,6 +64,20 @@ function fillFromPost() {
   tagsText.value = (post.tags || []).join(', ')
 }
 
+// 线上要凭口令才能写仓库；本地不需要
+function checkPassword() {
+  if (isDev) {
+    return true
+  }
+  const value = password.value.trim()
+  if (!value) {
+    ElMessage.warning('请先填写编辑口令')
+    return false
+  }
+  setPassword(value)
+  return true
+}
+
 function validate() {
   if (!form.value.title.trim()) {
     ElMessage.warning('请填写标题')
@@ -77,7 +100,7 @@ function buildPayload() {
 }
 
 async function save() {
-  if (!validate()) {
+  if (!validate() || !checkPassword()) {
     return
   }
 
@@ -93,10 +116,16 @@ async function save() {
       slug = created.slug
     }
 
-    ElMessage.success('已保存')
-    // 跳转详情后刷新页面，让构建期的文章扫描重新执行
-    router.push(`/post/${slug}`)
-    window.setTimeout(() => window.location.reload(), 120)
+    if (isDev) {
+      ElMessage.success('已保存')
+      // 本地写完立刻刷新，让构建期的文章扫描带上新文件
+      router.push(`/post/${slug}`)
+      window.setTimeout(() => window.location.reload(), 120)
+    } else {
+      // 线上是提交到仓库，要等自动构建完成才看得到
+      ElMessage.success('已提交，约 1-2 分钟后自动构建完成')
+      router.push('/posts')
+    }
   } catch (error) {
     ElMessage.error(error.message || '保存失败')
   } finally {
@@ -105,6 +134,10 @@ async function save() {
 }
 
 async function handleDelete() {
+  if (!checkPassword()) {
+    return
+  }
+
   try {
     await ElMessageBox.confirm('删除后无法恢复，确定删除这篇文章吗？', '删除确认', {
       type: 'warning',
@@ -117,9 +150,14 @@ async function handleDelete() {
 
   try {
     await deletePost(currentSlug.value)
-    ElMessage.success('已删除')
-    router.push('/posts')
-    window.setTimeout(() => window.location.reload(), 120)
+    if (isDev) {
+      ElMessage.success('已删除')
+      router.push('/posts')
+      window.setTimeout(() => window.location.reload(), 120)
+    } else {
+      ElMessage.success('已提交删除，约 1-2 分钟后自动构建完成')
+      router.push('/posts')
+    }
   } catch (error) {
     ElMessage.error(error.message || '删除失败')
   }
@@ -134,7 +172,7 @@ function goBack() {
 }
 
 onMounted(() => {
-  if (!isDev) {
+  if (!canEdit) {
     router.replace('/')
     return
   }
@@ -146,7 +184,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="isDev" class="blog-container page editor-page">
+  <div v-if="canEdit" class="blog-container page editor-page">
     <div class="editor-header">
       <el-button text @click="goBack">
         <el-icon><Back /></el-icon>
@@ -181,7 +219,16 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="草稿">
           <el-switch v-model="form.draft" />
-          <span class="draft-hint">草稿不会出现在文章列表和首页</span>
+          <span class="field-hint">草稿不会出现在文章列表和首页</span>
+        </el-form-item>
+        <el-form-item v-if="!isDev" label="编辑口令">
+          <el-input
+            v-model="password"
+            type="password"
+            show-password
+            placeholder="Netlify 里的 EDITOR_PASSWORD"
+          />
+          <span class="field-hint">保存后本机记住，不用每次输入</span>
         </el-form-item>
       </div>
       <el-form-item label="摘要">
@@ -193,6 +240,10 @@ onMounted(() => {
         />
       </el-form-item>
     </el-form>
+
+    <p v-if="!isDev" class="online-note">
+      线上保存 = 提交一次 Markdown 到 GitHub，站点约 1-2 分钟后自动重新构建。
+    </p>
 
     <div class="editor-body">
       <MdEditor v-model="form.content" :theme="editorTheme" :no-upload-img="true" />
@@ -233,7 +284,7 @@ onMounted(() => {
   grid-column: 1 / -1;
 }
 
-.draft-hint {
+.field-hint {
   margin-left: 10px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
@@ -241,6 +292,16 @@ onMounted(() => {
 
 .date-picker {
   width: 100%;
+}
+
+.online-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--blog-border);
+  border-radius: 8px;
+  background-color: var(--blog-surface);
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 .editor-body {

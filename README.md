@@ -31,10 +31,18 @@ npm run preview
 例如 `src/posts/my-first-post.md` 对应 `#/post/my-first-post`。构建时会自动扫描该目录，
 无需手动注册。
 
-本地开发时也可以直接在网页里写文章：运行 `npm run dev` 后，点顶栏的「写文章」，填写标题、分类、标签、日期、摘要和草稿状态，正文使用带工具栏的 Markdown
-编辑器。保存时文件名由开发服务器按秒级时间戳生成（如 `20261008153012.md`），写入
-`src/posts/`；同一秒内重复创建会自动追加序号。编辑已有文章时可修改或删除。该入口只在开发
-环境显示，构建部署后自动隐藏。
+本地也可以在网页里写文章：运行 `npm run dev` 后点顶栏的「写文章」，填写标题、分类、标签、日期、摘要和草稿状态，正文用带工具栏的 Markdown 编辑器。保存的文件名由服务端按秒级时间戳生成（如 `20261008153012.md`），写入 `src/posts/`，同一秒内重复创建会自动追加序号。
+
+**线上（Netlify）同样可以写**：`netlify/functions/posts.mjs` 校验口令后，用 GitHub API 把 Markdown 提交进 `src/posts/`，然后由自动构建带上线。线上第一次保存前要在编辑器里填一次「编辑口令」，之后本机记住；保存到上线约 1-2 分钟。
+
+线上写文章依赖两个 Netlify 环境变量：
+
+| 变量 | 作用 |
+| --- | --- |
+| `GITHUB_TOKEN` | fine-grained PAT，只授权本仓库，权限 `Contents: Read and write` |
+| `EDITOR_PASSWORD` | 编辑器口令，写接口用它鉴权 |
+
+GitHub Pages 没有 Serverless Function，所以那边不显示「写文章」入口（入口由 `VITE_HAS_EDITOR` 控制，Netlify 在 `netlify.toml` 里置为 `true`）。
 
 frontmatter 字段：
 
@@ -64,7 +72,10 @@ src/
   utils/blog.js        扫描文章、解析 frontmatter、筛选与渲染
   utils/editorApi.js   文章写入接口的调用封装
   utils/useDarkMode.js 深色模式组合式函数
-vite/blogPlugin.js     开发服务器上的文章写入 API（仅本地生效）
+netlify/functions/posts.mjs
+                            线上写文章后端（Netlify Function）
+shared/postMarkdown.js      frontmatter 生成，本地与线上共用
+vite/blogPlugin.js          开发服务器上的文章写入 API（仅本地生效）
 ```
 
 ## 部署到 GitHub Pages
@@ -80,6 +91,7 @@ vite/blogPlugin.js     开发服务器上的文章写入 API（仅本地生效�
 
 ## 已知取舍
 
-- 不带评论系统和线上后台，文章直接写 Markdown 文件，网页编辑只在本地开发服务器可用。
+- 不带评论系统，文章直接写 Markdown 文件，网页编辑在本地和 Netlify 线上都可用。
+- 线上保存是先提交 Markdown 再等自动构建，约 1-2 分钟后才在站点看到。
 - 文章文件名即地址，创建后不会随标题变化。
 - 路由使用 hash 模式，静态托管无需服务端重写规则。
