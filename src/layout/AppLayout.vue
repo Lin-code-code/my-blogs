@@ -1,14 +1,15 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Moon, Sunny } from '@element-plus/icons-vue'
+import { Moon, Sunny, UserFilled } from '@element-plus/icons-vue'
+import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
 import { useAuth } from '../utils/auth.js'
 import { useDarkMode } from '../utils/useDarkMode.js'
 
 const route = useRoute()
 const router = useRouter()
 const { isDark, toggle } = useDarkMode()
-const { isAuthenticated, isStaff, loadCurrentUser, logout } = useAuth()
+const { currentUser, isAuthenticated, isStaff, loadCurrentUser, logout } = useAuth()
 
 onMounted(loadCurrentUser)
 
@@ -17,6 +18,16 @@ async function handleLogout() {
     await logout()
   } finally {
     router.push('/')
+  }
+}
+
+async function handleAccountCommand(command) {
+  if (command === 'account') {
+    router.push('/account')
+    return
+  }
+  if (command === 'logout') {
+    await handleLogout()
   }
 }
 const menus = [
@@ -49,18 +60,31 @@ const menus = [
           >
             写文章
           </router-link>
-          <router-link
-            v-if="isStaff"
-            to="/account"
-            class="nav-item"
-            :class="{ active: route.path === '/account' }"
+          <el-dropdown
+            v-if="isAuthenticated"
+            trigger="click"
+            placement="bottom-end"
+            @command="handleAccountCommand"
           >
-            账号设置
-          </router-link>
-          <router-link v-if="!isAuthenticated" to="/login" class="nav-item" :class="{ active: route.path === '/login' }">
+            <button
+              type="button"
+              class="account-trigger"
+              :aria-label="`账号菜单：${currentUser.username}`"
+              aria-haspopup="menu"
+            >
+              <el-icon><UserFilled /></el-icon>
+              <span class="account-name">{{ currentUser.username }}</span>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="account">修改密码</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <router-link v-else to="/login" class="nav-item" :class="{ active: route.path === '/login' }">
             登录
           </router-link>
-          <button v-else class="nav-link-button" @click="handleLogout">退出</button>
           <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
             <el-button text circle class="theme-toggle" @click="toggle">
               <el-icon><Moon v-if="!isDark" /><Sunny v-else /></el-icon>
@@ -167,19 +191,31 @@ const menus = [
   font-weight: 600;
 }
 
-.nav-link-button {
-  padding: 7px 13px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.nav-link-button:hover {
+.account-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   background-image: var(--grad-brand-soft);
   color: var(--blog-accent-text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.account-trigger:hover {
+  border-color: rgba(234, 88, 12, 0.24);
+  transform: translateY(-1px);
+}
+
+.account-trigger:active {
+  transform: translateY(0);
 }
 
 .theme-toggle {
@@ -247,6 +283,14 @@ const menus = [
   .nav-item {
     padding: 6px 9px;
     font-size: 13px;
+  }
+
+  .account-name {
+    display: none;
+  }
+
+  .account-trigger {
+    padding: 6px 10px;
   }
 }
 </style>
