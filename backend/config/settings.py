@@ -15,6 +15,12 @@ ALLOWED_HOSTS = [
     if value.strip()
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    value.strip()
+    for value in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if value.strip()
+]
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -82,3 +88,9 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 NETLIFY_BUILD_HOOK_URL = os.environ.get("NETLIFY_BUILD_HOOK_URL", "")
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = os.environ.get("DJANGO_COOKIE_SAMESITE", "Lax")
+CSRF_COOKIE_SAMESITE = os.environ.get("DJANGO_COOKIE_SAMESITE", "Lax")

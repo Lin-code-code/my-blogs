@@ -5,6 +5,8 @@ const routes = [
   { path: '/posts', name: 'posts', component: () => import('../pages/Posts.vue') },
   { path: '/post/:slug', name: 'post-detail', component: () => import('../pages/PostDetail.vue') },
   { path: '/about', name: 'about', component: () => import('../pages/About.vue') },
+  { path: '/login', name: 'login', component: () => import('../pages/Login.vue') },
+  { path: '/editor', name: 'editor-new', component: () => import('../pages/Editor.vue') },
 ]
 
 // 使用 hash 模式，静态托管（如 GitHub Pages）无需服务端路由配置

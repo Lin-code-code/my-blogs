@@ -18,3 +18,5 @@ backend/.admin-credentials.local.txt
 
 .env
 !.env.example
+.idea/
+

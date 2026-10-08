@@ -1,6 +1,6 @@
 # 我的博客
 
-基于 Vue 3 + Vite 的静态博客，文章由独立的 Django + PostgreSQL 后端管理，构建时同步到前端。
+基于 Vue 3 + Vite 的静态博客，文章由独立的 Django + PostgreSQL 后端管理。游客可以查看文章，管理员登录后可以在前端新增文章。
 
 ## 技术栈
 
@@ -14,10 +14,10 @@
 
 ## 本地配置
 
-项目根目录使用统一配置文件：
+根目录使用统一配置文件：
 
 ```text
-.env       本地真实配置，不提交仓库
+.env         本地真实配置，不提交仓库
 .env.example 配置模板
 ```
 
@@ -29,9 +29,9 @@ Copy-Item .env.example .env
 
 然后在 `.env` 中填写数据库密码等本地配置。
 
-## 本地开发
+## 本地运行
 
-先启动 Django API：
+启动 Django API：
 
 ```powershell
 cd backend
@@ -39,30 +39,35 @@ cd backend
 python manage.py runserver 127.0.0.1:8000
 ```
 
-再启动前端：
+启动前端：
 
 ```powershell
 cd E:\AlProject\my_blogs
 npm run dev
 ```
 
-`npm run dev` 和 `npm run build` 会通过 `.env` 中的 `BLOG_API_BASE_URL` 调用 Django API，并生成 `src/generated/posts.json`。
-
-## 文章管理
-
-文章通过 Django Admin 管理：
+访问：
 
 ```text
-http://127.0.0.1:8000/admin/
+前端：http://127.0.0.1:5173/
+登录：http://127.0.0.1:5173/#/login
+写文章：http://127.0.0.1:5173/#/editor
+Django Admin：http://127.0.0.1:8000/admin/
 ```
 
-公开只读接口：
+## 权限规则
 
-```text
-GET http://127.0.0.1:8000/api/v1/posts/
-```
+- 游客只能查看文章。
+- 只有登录的 Django `is_staff` 用户才能写文章。
+- 登录使用 Django Session 和 CSRF，不使用独立编辑口令。
+- 写文章接口：`POST /api/v1/admin/posts/`。
+- 公开文章接口：`GET /api/v1/posts/`。
 
-接口只返回 `draft=false` 的文章。
+## 文章同步
+
+`npm run dev` 和 `npm run build` 会通过 `.env` 中的 `BLOG_API_BASE_URL` 调用 Django API，并生成 `src/generated/posts.json` 作为构建时兜底数据。
+
+管理员在前端保存文章后，前端会立即重新请求公开文章接口并刷新页面数据。
 
 ## 目录结构
 
@@ -70,9 +75,12 @@ GET http://127.0.0.1:8000/api/v1/posts/
 src/
   components/          通用组件
   layout/              页面布局
-  pages/               首页、文章列表、文章详情、关于
+  pages/               首页、文章列表、文章详情、登录、添加文章、关于
   router/index.js      前端路由
-  utils/blog.js        读取构建时同步的文章数据
+  utils/api.js         前端 API 请求封装
+  utils/auth.js        Django 登录状态
+  utils/blog.js        文章数据与 Markdown 渲染
+  utils/editorApi.js   管理员写文章接口
   posts/               旧 Markdown 文章，迁移验证完成前保留
 
 scripts/
@@ -80,14 +88,6 @@ scripts/
 
 backend/
   config/              Django 配置，自动读取根目录 .env
-  blog/                文章模型、Admin、API 和导入命令
+  blog/                文章模型、Admin、认证和文章接口
   requirements.txt     Python 依赖
 ```
-
-## 构建
-
-```powershell
-npm run build
-```
-
-部署阶段尚未配置，本地测试通过后再单独处理 Linux 服务器、HTTPS 和 Netlify Build Hook。

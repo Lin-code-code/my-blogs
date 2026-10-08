@@ -1,10 +1,24 @@
 <script setup>
-import { useRoute } from 'vue-router'
+import { onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Moon, Sunny } from '@element-plus/icons-vue'
+import { useAuth } from '../utils/auth.js'
 import { useDarkMode } from '../utils/useDarkMode.js'
 
 const route = useRoute()
+const router = useRouter()
 const { isDark, toggle } = useDarkMode()
+const { isAuthenticated, isStaff, loadCurrentUser, logout } = useAuth()
+
+onMounted(loadCurrentUser)
+
+async function handleLogout() {
+  try {
+    await logout()
+  } finally {
+    router.push('/')
+  }
+}
 const menus = [
   { path: '/', label: '首页' },
   { path: '/posts', label: '文章' },
@@ -27,6 +41,18 @@ const menus = [
           >
             {{ m.label }}
           </router-link>
+          <router-link
+            v-if="isStaff"
+            to="/editor"
+            class="nav-item"
+            :class="{ active: route.path.startsWith('/editor') }"
+          >
+            写文章
+          </router-link>
+          <router-link v-if="!isAuthenticated" to="/login" class="nav-item" :class="{ active: route.path === '/login' }">
+            登录
+          </router-link>
+          <button v-else class="nav-link-button" @click="handleLogout">退出</button>
           <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
             <el-button text circle class="theme-toggle" @click="toggle">
               <el-icon><Moon v-if="!isDark" /><Sunny v-else /></el-icon>
@@ -131,6 +157,21 @@ const menus = [
 
 .nav-item.active {
   font-weight: 600;
+}
+
+.nav-link-button {
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.nav-link-button:hover {
+  background-image: var(--grad-brand-soft);
+  color: var(--blog-accent-text);
 }
 
 .theme-toggle {
