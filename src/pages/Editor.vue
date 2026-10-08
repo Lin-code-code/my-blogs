@@ -99,10 +99,9 @@ onMounted(async () => {
 <template>
   <div class="blog-container page editor-page">
     <header class="editor-header">
-      <el-button text @click="goBack">返回</el-button>
+      <el-button type="primary" @click="goBack">返回</el-button>
       <div class="editor-title">
         <h1>添加文章</h1>
-        <p>使用双栏 Markdown 编辑器编写文章，右侧实时预览。</p>
       </div>
       <el-button type="primary" :loading="saving" @click="save">保存文章</el-button>
     </header>
