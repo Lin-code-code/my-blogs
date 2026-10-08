@@ -24,7 +24,7 @@ function toggleTag(tag) {
       <p class="count">共 {{ total }} 篇</p>
     </header>
 
-    <div class="toolbar">
+    <div class="toolbar paper-panel">
       <el-input
         v-model="keyword"
         placeholder="搜索标题 / 摘要 / 标签"
@@ -73,21 +73,22 @@ function toggleTag(tag) {
 
 .count {
   margin: 0;
+  padding: 6px 11px;
+  border: 1px solid var(--blog-border);
+  border-radius: 999px;
+  background: var(--blog-surface-soft);
+  color: var(--blog-accent-text);
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  font-weight: 700;
 }
 
-/* 筛选区做成一个带渐变顶线的工具条 */
 .toolbar {
   position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
-  padding: 14px;
-  border: 1px solid var(--blog-border);
-  border-radius: 8px;
-  background-color: var(--blog-surface);
+  margin-bottom: 16px;
+  padding: 16px;
   overflow: hidden;
 }
 
@@ -97,8 +98,23 @@ function toggleTag(tag) {
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 3px;
   background-image: var(--grad-brand);
+}
+
+.toolbar :deep(.el-input__wrapper),
+.toolbar :deep(.el-select__wrapper) {
+  border: 1px solid var(--blog-border);
+  border-radius: 10px;
+  background-color: var(--blog-surface-soft);
+  box-shadow: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toolbar :deep(.el-input__wrapper.is-focus),
+.toolbar :deep(.el-select__wrapper.is-focused) {
+  border-color: rgba(234, 88, 12, 0.5);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .search-input {
@@ -107,25 +123,28 @@ function toggleTag(tag) {
 }
 
 .category-select {
-  width: 160px;
+  width: 170px;
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .tags :deep(.el-check-tag) {
+  min-height: 34px;
+  padding: 6px 11px;
   border: 1px solid var(--blog-border);
-  border-radius: 8px;
-  background-color: var(--blog-surface);
+  border-radius: 999px;
+  background-color: var(--blog-surface-soft);
   color: var(--el-text-color-regular);
-  transition: background-image 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  transition: background-image 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .tags :deep(.el-check-tag:hover) {
+  border-color: rgba(234, 88, 12, 0.25);
   background-image: var(--grad-brand-soft);
   color: var(--blog-accent-text);
 }
@@ -134,6 +153,17 @@ function toggleTag(tag) {
   border-color: transparent;
   background-image: var(--grad-brand);
   color: var(--blog-on-brand);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .category-select {
+    width: 100%;
+  }
 }
 </style>

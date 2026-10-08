@@ -106,7 +106,7 @@ onMounted(async () => {
       <el-button type="primary" :loading="saving" @click="save">保存文章</el-button>
     </header>
 
-    <section class="meta-panel">
+    <section class="meta-panel paper-panel">
       <div class="panel-heading">
         <span class="panel-index">01</span>
         <div>
@@ -154,7 +154,7 @@ onMounted(async () => {
       </el-form>
     </section>
 
-    <section class="editor-shell">
+    <section class="editor-shell paper-panel">
       <div class="panel-heading editor-heading">
         <span class="panel-index">02</span>
         <div>
@@ -191,21 +191,13 @@ onMounted(async () => {
 
 .editor-title h1 {
   margin: 0 0 5px;
-  font-size: 26px;
+  font-size: 28px;
 }
 
 .editor-title p {
   margin: 0;
   color: var(--el-text-color-secondary);
   font-size: 13px;
-}
-
-.meta-panel,
-.editor-shell {
-  border: 1px solid var(--blog-border);
-  border-radius: 14px;
-  background-color: var(--blog-surface);
-  box-shadow: var(--blog-shadow);
 }
 
 .meta-panel {

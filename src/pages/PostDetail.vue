@@ -14,15 +14,18 @@ const nav = computed(() => neighbors(route.params.slug))
 </script>
 
 <template>
-  <div class="blog-container page">
+  <div class="blog-container page post-detail-page">
     <template v-if="post">
-      <article>
-        <h1 class="title">{{ post.title }}</h1>
-        <div class="meta post-tags">
-          <span class="date">{{ post.date }}</span>
-          <el-tag v-if="post.category" size="small" type="info">{{ post.category }}</el-tag>
-          <el-tag v-for="t in post.tags" :key="t" size="small" effect="plain">{{ t }}</el-tag>
-        </div>
+      <article class="article-shell paper-panel">
+        <header class="article-header">
+          <span class="article-kicker">Article</span>
+          <h1 class="title">{{ post.title }}</h1>
+          <div class="meta post-tags">
+            <span class="date">{{ post.date }}</span>
+            <el-tag v-if="post.category" size="small" type="info">{{ post.category }}</el-tag>
+            <el-tag v-for="t in post.tags" :key="t" size="small" effect="plain">{{ t }}</el-tag>
+          </div>
+        </header>
         <div class="markdown-body" v-html="html"></div>
       </article>
 
@@ -46,11 +49,30 @@ const nav = computed(() => neighbors(route.params.slug))
 </template>
 
 <style scoped>
+.post-detail-page {
+  max-width: var(--blog-max-width);
+}
+
+.article-shell {
+  padding: 38px 42px 42px;
+}
+
+.article-kicker {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--blog-accent-text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .title {
   position: relative;
-  margin: 0 0 14px;
-  padding-bottom: 14px;
-  font-size: 27px;
+  margin: 0 0 18px;
+  padding-bottom: 16px;
+  font-size: 34px;
+  line-height: 1.25;
 }
 
 .title::after {
@@ -58,7 +80,7 @@ const nav = computed(() => neighbors(route.params.slug))
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 56px;
+  width: 64px;
   height: 3px;
   border-radius: 2px;
   background: var(--grad-brand);
@@ -69,9 +91,9 @@ const nav = computed(() => neighbors(route.params.slug))
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 26px;
-  font-size: 13px;
+  margin-bottom: 30px;
   color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .date::before {
@@ -85,14 +107,13 @@ const nav = computed(() => neighbors(route.params.slug))
   vertical-align: 1px;
 }
 
-
 .pager {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 48px;
-  padding-top: 20px;
-  border-top: 1px solid var(--blog-border);
+  margin-top: 28px;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .pager-link {
@@ -100,14 +121,16 @@ const nav = computed(() => neighbors(route.params.slug))
   align-items: center;
   gap: 6px;
   max-width: 46%;
-  padding: 9px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--blog-border);
-  border-radius: 8px;
-  background-color: var(--blog-surface);
+  border-radius: var(--radius-md);
+  background: var(--blog-surface-soft);
   color: var(--blog-accent-text);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
   text-decoration: none;
   font-size: 14px;
-  transition: background-image 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  font-weight: 600;
+  transition: background-image 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .pager-link span {
@@ -119,15 +142,21 @@ const nav = computed(() => neighbors(route.params.slug))
 .pager-link:hover {
   border-color: transparent;
   background-image: var(--grad-brand-soft);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .pager-link.next {
   margin-left: auto;
 }
 
-/* 窄屏竖排，避免文章标题被省略号截断 */
-@media (max-width: 560px) {
+@media (max-width: 680px) {
+  .article-shell {
+    padding: 26px 22px 30px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
 
   .pager {
     flex-direction: column;

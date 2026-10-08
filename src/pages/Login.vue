@@ -41,7 +41,7 @@ async function submit() {
 
 <template>
   <div class="blog-container page login-page">
-    <div class="login-card">
+    <div class="login-card paper-panel">
       <h1>管理员登录</h1>
       <p>登录后可以进入写文章页面。</p>
 
@@ -74,22 +74,30 @@ async function submit() {
 }
 
 .login-card {
+  position: relative;
   width: min(400px, 100%);
   min-height: 320px;
-  padding: 28px;
-  border: 1px solid var(--blog-border);
-  border-radius: 12px;
-  background-color: var(--blog-surface);
-  box-shadow: 0 14px 36px rgba(90, 30, 20, 0.08);
+  padding: 30px;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-image: var(--grad-brand);
 }
 
 .login-card h1 {
   margin: 0 0 8px;
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .login-card p {
-  margin: 0 0 22px;
+  margin: 0 0 24px;
   color: var(--el-text-color-secondary);
   font-size: 14px;
 }

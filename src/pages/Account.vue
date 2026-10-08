@@ -70,7 +70,7 @@ onMounted(async () => {
 
 <template>
   <div class="account-page">
-    <section class="account-hero">
+    <section class="account-hero paper-panel">
       <div class="account-avatar" aria-hidden="true">
         <el-icon :size="24"><UserFilled /></el-icon>
       </div>
@@ -81,7 +81,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <el-form label-position="top" class="account-form">
+    <el-form label-position="top" class="account-form paper-panel">
       <section class="form-section">
         <div class="section-heading">
           <h2>账号信息</h2>
@@ -180,7 +180,7 @@ onMounted(async () => {
 
 .account-hero h1 {
   margin: 0 0 6px;
-  font-size: 25px;
+  font-size: 28px;
 }
 
 .account-desc {
@@ -190,10 +190,7 @@ onMounted(async () => {
 }
 
 .account-form {
-  padding: 24px;
-  border: 1px solid var(--blog-border);
-  border-radius: 14px;
-  background-color: var(--blog-surface);
+  padding: 26px;
 }
 
 .section-heading {

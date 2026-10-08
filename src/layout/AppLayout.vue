@@ -141,13 +141,12 @@ const menus = [
 .header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   background: var(--blog-header-bg);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
-/* 顶栏底部的渐变细线，作为整站的主题线索 */
 .header::after {
   content: '';
   position: absolute;
@@ -156,24 +155,26 @@ const menus = [
   bottom: 0;
   height: 2px;
   background: var(--grad-brand);
-  opacity: 0.75;
+  opacity: 0.8;
   pointer-events: none;
 }
 
 .header-inner {
-  height: 60px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
 }
 
 .site-name {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-size: 18px;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 20px;
   font-weight: 700;
+  letter-spacing: -0.03em;
   text-decoration: none;
   background-image: var(--grad-text);
   -webkit-background-clip: text;
@@ -184,25 +185,41 @@ const menus = [
 .site-name::before {
   content: '';
   flex: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
   background-image: var(--grad-brand);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.32);
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .nav-item {
-  padding: 7px 13px;
-  border-radius: 8px;
+  position: relative;
+  padding: 8px 13px;
+  border-radius: 10px;
   color: var(--el-text-color-regular);
   text-decoration: none;
   font-size: 14px;
-  transition: background-image 0.25s ease, color 0.25s ease;
+  font-weight: 500;
+  transition: background-image 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--grad-brand);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .nav-item:hover,
@@ -211,8 +228,13 @@ const menus = [
   color: var(--blog-accent-text);
 }
 
+.nav-item:hover::after,
+.nav-item.active::after {
+  opacity: 1;
+}
+
 .nav-item.active {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .nav-dropdown-button {
@@ -229,19 +251,21 @@ const menus = [
   gap: 7px;
   min-height: 44px;
   min-width: 44px;
-  padding: 7px 11px;
-  border: 1px solid transparent;
+  padding: 7px 12px;
+  border: 1px solid rgba(234, 88, 12, 0.16);
   border-radius: 999px;
   background-image: var(--grad-brand-soft);
   color: var(--blog-accent-text);
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.1);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .account-trigger:hover {
-  border-color: rgba(234, 88, 12, 0.24);
+  border-color: rgba(234, 88, 12, 0.3);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.16);
   transform: translateY(-1px);
 }
 
@@ -267,7 +291,7 @@ const menus = [
 
 .footer {
   position: relative;
-  padding: 26px 0;
+  padding: 30px 0;
   border-top: 1px solid var(--blog-border);
 }
 
@@ -277,7 +301,7 @@ const menus = [
   top: -1px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(360px, 60%);
+  width: min(420px, 64%);
   height: 2px;
   border-radius: 2px;
   background: var(--grad-brand);
@@ -288,25 +312,25 @@ const menus = [
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 13px;
   color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .footer-brand {
-  font-weight: 600;
+  font-weight: 700;
   background-image: var(--grad-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 680px) {
   .header-inner {
-    height: 56px;
+    height: 58px;
   }
 
   .site-name {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .nav {
@@ -314,8 +338,13 @@ const menus = [
   }
 
   .nav-item {
-    padding: 6px 9px;
+    padding: 7px 9px;
     font-size: 13px;
+  }
+
+  .nav-item::after {
+    left: 10px;
+    right: 10px;
   }
 
   .account-name {

@@ -51,7 +51,7 @@ onMounted(async () => {
     <el-empty v-else-if="drafts.length === 0" description="暂无草稿" />
 
     <div v-else class="draft-list">
-      <article v-for="draft in drafts" :key="draft.id" class="draft-card">
+      <article v-for="draft in drafts" :key="draft.id" class="draft-card paper-panel">
         <div class="draft-main">
           <div class="draft-meta">
             <span>{{ draft.date }}</span>
@@ -92,11 +92,13 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 18px;
-  border: 1px solid var(--blog-border);
-  border-radius: 12px;
-  background-color: var(--blog-surface);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.draft-card:hover {
+  box-shadow: 0 14px 32px rgba(90, 30, 20, 0.1);
+  transform: translateY(-2px);
 }
 
 .draft-main {

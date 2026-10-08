@@ -1,5 +1,19 @@
 :root {
   --blog-max-width: 920px;
+  --font-display: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* 品牌渐变：珊瑚玫瑰 -> 橙 -> 琥珀，跨三个暖色色相，避免单一色系 */
   --grad-brand: linear-gradient(118deg, #f43f5e 0%, #f97316 52%, #fbbf24 100%);
@@ -16,6 +30,7 @@
   --blog-border: rgba(15, 23, 42, 0.08);
   --blog-shadow: 0 12px 32px rgba(15, 23, 42, 0.09);
   --blog-header-bg: rgba(255, 255, 255, 0.82);
+  --blog-surface-soft: rgba(255, 255, 255, 0.62);
   --blog-accent-text: #c2410c;
   --blog-on-brand: #3f1116;
 
@@ -44,6 +59,7 @@ html.dark {
   --blog-border: rgba(255, 255, 255, 0.09);
   --blog-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   --blog-header-bg: rgba(15, 17, 21, 0.82);
+  --blog-surface-soft: rgba(23, 26, 32, 0.72);
   --blog-accent-text: #fdba74;
   --blog-on-brand: #3f1116;
 
@@ -65,7 +81,7 @@ html.dark {
 body {
   margin: 0;
   color: var(--el-text-color-primary);
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  font-family: var(--font-body);
 
   background-color: var(--blog-bg);
   /* 壁纸作为全局背景，上面叠加暖白半透明层保证文字可读 */
@@ -110,20 +126,26 @@ html.dark :focus-visible {
 }
 
 .page {
-  padding-top: 28px;
-  padding-bottom: 56px;
+  padding-top: 36px;
+  padding-bottom: 72px;
 }
 
 .page-head {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .page-head h1 {
   position: relative;
   display: inline-block;
-  margin: 0 0 10px;
+  margin: 0;
   padding-bottom: 10px;
-  font-size: 26px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  letter-spacing: -0.02em;
 }
 
 .page-head h1::after {
@@ -297,4 +319,52 @@ html.dark .hljs-tag {
   border-radius: 2px;
   background: var(--grad-brand);
   opacity: 0.5;
+}
+
+
+h1,
+h2,
+h3,
+.display-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.paper-panel {
+  border: 1px solid var(--blog-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, var(--blog-surface-soft), var(--blog-surface)),
+    var(--blog-surface);
+  box-shadow: var(--blog-shadow);
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.24s ease, transform 0.24s var(--ease-out);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
