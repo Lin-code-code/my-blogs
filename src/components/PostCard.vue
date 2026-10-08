@@ -20,6 +20,7 @@ defineProps({
 .post-card {
   position: relative;
   margin-bottom: 16px;
+  min-height: 168px;
   border: 1px solid var(--blog-border);
   border-radius: 8px;
   background-color: var(--blog-surface);
@@ -53,6 +54,13 @@ defineProps({
   opacity: 1;
 }
 
+:deep(.el-card__body) {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  padding: 18px 20px;
+}
+
 .title {
   font-size: 18px;
   font-weight: 600;
@@ -68,13 +76,19 @@ defineProps({
 }
 
 .summary {
-  margin: 8px 0 12px;
-  font-size: 14px;
+  display: -webkit-box;
+  margin: 9px 0 14px;
+  overflow: hidden;
   color: var(--el-text-color-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .meta {
   display: flex;
+  margin-top: auto;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;

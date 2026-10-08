@@ -18,7 +18,7 @@ function toggleTag(tag) {
 </script>
 
 <template>
-  <div class="blog-container page">
+  <div class="blog-container page posts-page">
     <header class="page-head">
       <h1>全部文章</h1>
       <p class="count">共 {{ total }} 篇</p>
@@ -47,12 +47,30 @@ function toggleTag(tag) {
       </el-check-tag>
     </div>
 
-    <PostCard v-for="p in filtered" :key="p.slug" :post="p" />
-    <el-empty v-if="total === 0" description="没有符合条件的文章" />
+    <div v-if="total > 0" class="post-grid">
+      <PostCard v-for="p in filtered" :key="p.slug" :post="p" />
+    </div>
+    <el-empty v-else description="没有符合条件的文章" />
   </div>
 </template>
 
 <style scoped>
+.posts-page {
+  max-width: 1180px;
+}
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+
+.post-grid :deep(.post-card) {
+  height: 100%;
+  margin-bottom: 0;
+}
+
 .count {
   margin: 0;
   font-size: 13px;
