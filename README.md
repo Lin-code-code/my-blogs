@@ -12,6 +12,23 @@
 - Django 5.2
 - PostgreSQL 18
 
+## 本地配置
+
+项目根目录使用统一配置文件：
+
+```text
+.env       本地真实配置，不提交仓库
+.env.example 配置模板
+```
+
+首次运行：
+
+```powershell
+Copy-Item .env.example .env
+```
+
+然后在 `.env` 中填写数据库密码等本地配置。
+
 ## 本地开发
 
 先启动 Django API：
@@ -19,7 +36,6 @@
 ```powershell
 cd backend
 .\.venv\Scripts\Activate.ps1
-. ..\.env.local.ps1
 python manage.py runserver 127.0.0.1:8000
 ```
 
@@ -27,11 +43,10 @@ python manage.py runserver 127.0.0.1:8000
 
 ```powershell
 cd E:\AlProject\my_blogs
-$env:BLOG_API_BASE_URL = "http://127.0.0.1:8000"
 npm run dev
 ```
 
-`npm run dev` 和 `npm run build` 都会先执行 `scripts/sync-content.mjs`，从 Django 获取已发布文章并生成 `src/generated/posts.json`。
+`npm run dev` 和 `npm run build` 会通过 `.env` 中的 `BLOG_API_BASE_URL` 调用 Django API，并生成 `src/generated/posts.json`。
 
 ## 文章管理
 
@@ -64,7 +79,7 @@ scripts/
   sync-content.mjs     构建时同步 Django 文章
 
 backend/
-  config/              Django 配置
+  config/              Django 配置，自动读取根目录 .env
   blog/                文章模型、Admin、API 和导入命令
   requirements.txt     Python 依赖
 ```
@@ -72,7 +87,6 @@ backend/
 ## 构建
 
 ```powershell
-$env:BLOG_API_BASE_URL = "http://127.0.0.1:8000"
 npm run build
 ```
 

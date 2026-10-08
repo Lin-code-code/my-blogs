@@ -9,7 +9,6 @@ dist
 # 本地变更记录，不入库
 changelog.md
 
-backend/.env.local.ps1
 backend/.venv/
 backend/staticfiles/
 backend/**/__pycache__/
@@ -17,3 +16,5 @@ backend/db.sqlite3
 src/generated/
 backend/.admin-credentials.local.txt
 
+.env
+!.env.example
