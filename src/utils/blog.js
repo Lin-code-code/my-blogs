@@ -1,11 +1,9 @@
 import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
-import yaml from 'js-yaml'
-// 只引入常用语言，避免把 highlight.js 全量语言包打进产物
 import hljs from 'highlight.js/lib/common'
 import 'highlight.js/styles/github.css'
+import generatedPosts from '../generated/posts.json'
 
-// markdown 渲染器，代码块走 highlight.js 高亮
 const md = new MarkdownIt({
   html: true,
   linkify: true,
@@ -17,92 +15,60 @@ const md = new MarkdownIt({
   },
 })
 
-// 构建期扫描 src/posts 目录下所有 markdown 文件
-const modules = import.meta.glob('/src/posts/*.md', { eager: true, query: '?raw', import: 'default' })
-
-// gray-matter 依赖 Node 的 Buffer，无法在浏览器运行，这里用 js-yaml 自行解析 frontmatter
-function parseFrontmatter(raw) {
-  const text = raw.replace(/^\uFEFF/, '')
-  const lines = text.split(/\r?\n/)
-
-  if (!/^---[ \t]*$/.test(lines[0] || '')) {
-    return { data: {}, content: text }
-  }
-
-  const end = lines.findIndex((line, index) => index > 0 && /^---[ \t]*$/.test(line))
-  if (end === -1) {
-    return { data: {}, content: text }
-  }
-
-  let data = {}
-  try {
-    data = yaml.load(lines.slice(1, end).join('\n')) || {}
-  } catch (error) {
-    console.warn('[blog] frontmatter 解析失败:', error.message)
-  }
-
-  return { data, content: lines.slice(end + 1).join('\n') }
+function fallbackSummary(content) {
+  return String(content || '')
+    .replace(/[#>*`\-[\]]/g, '')
+    .trim()
+    .slice(0, 120)
 }
 
-function parsePosts() {
-  return Object.entries(modules)
-    .map(([path, raw]) => {
-      const { data, content } = parseFrontmatter(raw)
-      const slug = path.split('/').pop().replace(/\.md$/, '')
-      return {
-        slug,
-        title: data.title || slug,
-        date: data.date ? String(data.date) : '',
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        category: data.category || '未分类',
-        draft: data.draft === true,
-        summary: data.summary || content.replace(/[#>*`\-[\]]/g, '').trim().slice(0, 120),
-        content,
-      }
-    })
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-}
+const posts = generatedPosts
+  .filter((post) => !post.draft)
+  .map((post) => ({
+    ...post,
+    summary: post.summary || fallbackSummary(post.content),
+  }))
+  .sort((a, b) => (a.date < b.date ? 1 : -1))
 
-const posts = parsePosts()
-// 草稿不进入列表、首页和上下篇导航，但保留在 posts 里供直链预览与编辑
-const published = posts.filter((p) => !p.draft)
-
-// 全部文章（按日期倒序，不含草稿）
 export function usePosts() {
-  const allPosts = computed(() => published)
-  const allTags = computed(() => [...new Set(published.flatMap((p) => p.tags))].sort())
-  const allCategories = computed(() => [...new Set(published.map((p) => p.category))].sort())
+  const allPosts = computed(() => posts)
+  const allTags = computed(() => [...new Set(posts.flatMap((post) => post.tags))].sort())
+  const allCategories = computed(() => [...new Set(posts.map((post) => post.category))].sort())
 
-  const latest = (n = 5) => computed(() => published.slice(0, n))
-  // 直链可以打开草稿做预览，列表里不展示
-  const getBySlug = (slug) => posts.find((p) => p.slug === slug)
+  const latest = (n = 5) => computed(() => posts.slice(0, n))
+  const getBySlug = (slug) => posts.find((post) => post.slug === slug)
 
-  // 按关键词（标题/摘要/标签）过滤
   const search = (postsRef, keywordRef, tagRef, categoryRef) =>
     computed(() =>
-      postsRef.value.filter((p) => {
-        const kw = (keywordRef.value || '').trim().toLowerCase()
-        const matchKw =
-          !kw ||
-          p.title.toLowerCase().includes(kw) ||
-          p.summary.toLowerCase().includes(kw) ||
-          p.tags.some((t) => t.toLowerCase().includes(kw))
-        const matchTag = !tagRef.value || p.tags.includes(tagRef.value)
-        const matchCat = !categoryRef.value || p.category === categoryRef.value
-        return matchKw && matchTag && matchCat
+      postsRef.value.filter((post) => {
+        const keyword = (keywordRef.value || '').trim().toLowerCase()
+        const matchKeyword =
+          !keyword ||
+          post.title.toLowerCase().includes(keyword) ||
+          post.summary.toLowerCase().includes(keyword) ||
+          post.tags.some((tag) => tag.toLowerCase().includes(keyword))
+        const matchTag = !tagRef.value || post.tags.includes(tagRef.value)
+        const matchCategory = !categoryRef.value || post.category === categoryRef.value
+        return matchKeyword && matchTag && matchCategory
       })
     )
 
-  // 上一篇 / 下一篇
   const neighbors = (slug) => {
-    const idx = published.findIndex((p) => p.slug === slug)
+    const index = posts.findIndex((post) => post.slug === slug)
     return {
-      prev: idx > 0 ? published[idx - 1] : null, // 更新的文章
-      next: idx >= 0 && idx < published.length - 1 ? published[idx + 1] : null, // 更早的文章
+      prev: index > 0 ? posts[index - 1] : null,
+      next: index >= 0 && index < posts.length - 1 ? posts[index + 1] : null,
     }
   }
 
-  const render = (content) => md.render(content)
-
-  return { allPosts, allTags, allCategories, latest, getBySlug, search, neighbors, render }
+  return {
+    allPosts,
+    allTags,
+    allCategories,
+    latest,
+    getBySlug,
+    search,
+    neighbors,
+    render: (content) => md.render(content),
+  }
 }
