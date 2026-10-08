@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePosts } from '../utils/blog.js'
 import PostCard from '../components/PostCard.vue'
 
+const isDev = import.meta.env.DEV
+const router = useRouter()
 const { allPosts, allTags, allCategories, search } = usePosts()
 
 const keyword = ref('')
@@ -19,9 +22,12 @@ function toggleTag(tag) {
 
 <template>
   <div class="blog-container page">
-    <header class="page-head">
-      <h1>全部文章</h1>
-      <p class="count">共 {{ total }} 篇</p>
+    <header class="page-head posts-head">
+      <div>
+        <h1>全部文章</h1>
+        <p class="count">共 {{ total }} 篇</p>
+      </div>
+      <el-button v-if="isDev" type="primary" @click="router.push('/editor')">添加文章</el-button>
     </header>
 
     <div class="toolbar">
@@ -53,6 +59,15 @@ function toggleTag(tag) {
 </template>
 
 <style scoped>
+/* 标题区改成两端对齐，右侧放「添加文章」按钮 */
+.posts-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .count {
   margin: 0;
   font-size: 13px;

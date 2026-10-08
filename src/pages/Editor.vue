@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElDatePicker, ElForm, ElFormItem, ElMessage, ElMessageBox } from 'element-plus'
+import { ElDatePicker, ElForm, ElFormItem, ElMessage, ElMessageBox, ElSwitch } from 'element-plus'
 import { Back } from '@element-plus/icons-vue'
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
@@ -22,29 +22,14 @@ const editorTheme = computed(() => (isDark.value ? 'dark' : 'light'))
 const today = new Date().toISOString().slice(0, 10)
 const form = ref({
   title: '',
-  slug: '',
   date: today,
   category: '',
   summary: '',
+  draft: false,
   content: '# 新文章\n\n在这里开始写作...\n',
 })
 const tagsText = ref('')
 const saving = ref(false)
-
-function slugFromTitle(title) {
-  const normalized = String(title || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return normalized || `post-${Date.now()}`
-}
-
-function onTitleInput() {
-  if (!isEdit.value) {
-    form.value.slug = slugFromTitle(form.value.title)
-  }
-}
 
 function parseTags(text) {
   return String(text || '')
@@ -61,10 +46,10 @@ function fillFromPost() {
 
   form.value = {
     title: post.title,
-    slug: post.slug,
     date: post.date || today,
     category: post.category || '',
     summary: post.summary || '',
+    draft: post.draft === true,
     content: post.content || '',
   }
   tagsText.value = (post.tags || []).join(', ')
@@ -76,22 +61,17 @@ function validate() {
     return false
   }
 
-  if (!/^[A-Za-z0-9_-]+$/.test(form.value.slug)) {
-    ElMessage.warning('地址 slug 只能包含字母、数字、连字符和下划线')
-    return false
-  }
-
   return true
 }
 
 function buildPayload() {
   return {
-    slug: form.value.slug.trim(),
     title: form.value.title.trim(),
     date: form.value.date,
     category: form.value.category.trim() || '未分类',
     tags: parseTags(tagsText.value),
     summary: form.value.summary.trim(),
+    draft: form.value.draft,
     content: form.value.content,
   }
 }
@@ -104,15 +84,18 @@ async function save() {
   saving.value = true
   try {
     const payload = buildPayload()
+    let slug = currentSlug.value
     if (isEdit.value) {
       await updatePost(currentSlug.value, payload)
     } else {
-      await createPost(payload)
+      // 文件名由服务端按秒级时间戳生成，必须用返回值才能跳转
+      const created = await createPost(payload)
+      slug = created.slug
     }
 
     ElMessage.success('已保存')
     // 跳转详情后刷新页面，让构建期的文章扫描重新执行
-    router.push(`/post/${payload.slug}`)
+    router.push(`/post/${slug}`)
     window.setTimeout(() => window.location.reload(), 120)
   } catch (error) {
     ElMessage.error(error.message || '保存失败')
@@ -169,7 +152,7 @@ onMounted(() => {
         <el-icon><Back /></el-icon>
         返回
       </el-button>
-      <h1>{{ isEdit ? '编辑文章' : '写文章' }}</h1>
+      <h1>{{ isEdit ? '编辑文章' : '添加文章' }}</h1>
       <div class="editor-actions">
         <el-button v-if="isEdit" type="danger" plain @click="handleDelete">删除</el-button>
         <el-button type="primary" :loading="saving" @click="save">保存</el-button>
@@ -179,14 +162,7 @@ onMounted(() => {
     <el-form label-position="top" class="editor-form">
       <div class="form-grid">
         <el-form-item label="标题" required>
-          <el-input v-model="form.title" placeholder="文章标题" @input="onTitleInput" />
-        </el-form-item>
-        <el-form-item label="地址 slug">
-          <el-input
-            v-model="form.slug"
-            :disabled="isEdit"
-            placeholder="仅限字母、数字、连字符和下划线"
-          />
+          <el-input v-model="form.title" placeholder="文章标题" />
         </el-form-item>
         <el-form-item label="分类">
           <el-input v-model="form.category" placeholder="例如：技术 / 随笔" />
@@ -202,6 +178,10 @@ onMounted(() => {
             placeholder="选择日期"
             class="date-picker"
           />
+        </el-form-item>
+        <el-form-item label="草稿">
+          <el-switch v-model="form.draft" />
+          <span class="draft-hint">草稿不会出现在文章列表和首页</span>
         </el-form-item>
       </div>
       <el-form-item label="摘要">
@@ -251,6 +231,12 @@ onMounted(() => {
 
 .form-grid :deep(.el-form-item:nth-child(1)) {
   grid-column: 1 / -1;
+}
+
+.draft-hint {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .date-picker {
