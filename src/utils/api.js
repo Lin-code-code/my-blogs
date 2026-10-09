@@ -1,10 +1,10 @@
 const rawBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
-export function apiUrl(path) {
+function apiUrl(path) {
   return `${rawBase}${path}`
 }
 
-export function getCsrfToken() {
+function getCsrfToken() {
   const match = document.cookie
     .split('; ')
     .find((row) => row.startsWith('csrftoken='))
