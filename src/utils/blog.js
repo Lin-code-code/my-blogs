@@ -16,6 +16,16 @@ const md = new MarkdownIt({
   },
 })
 
+md.renderer.rules.fence = (tokens, index, options) => {
+  const token = tokens[index]
+  const lang = token.info ? token.info.trim().split(/\s+/)[0] : ''
+  const highlighted = options.highlight
+    ? options.highlight(token.content, lang)
+    : md.utils.escapeHtml(token.content)
+  const encoded = encodeURIComponent(token.content)
+
+  return `<div class="code-block"><button type="button" class="code-copy-button" data-code="${encoded}" aria-label="复制代码">复制</button>${highlighted}</div>`
+}
 function fallbackSummary(content) {
   return String(content || '')
     .replace(/[#>*`\-[\]]/g, '')
@@ -95,3 +105,4 @@ export function usePosts() {
     render: (content) => md.render(content),
   }
 }
+

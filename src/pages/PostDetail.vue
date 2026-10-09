@@ -7,6 +7,34 @@ import { usePosts } from '../utils/blog.js'
 const route = useRoute()
 const { getBySlug, neighbors, render } = usePosts()
 
+async function copyCode(event) {
+  const button = event.target.closest('.code-copy-button')
+  if (!button) {
+    return
+  }
+
+  const code = decodeURIComponent(button.dataset.code || '')
+  try {
+    await navigator.clipboard.writeText(code)
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = code
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    textarea.remove()
+  }
+
+  const previous = button.textContent
+  button.textContent = '已复制'
+  button.classList.add('copied')
+  window.setTimeout(() => {
+    button.textContent = previous
+    button.classList.remove('copied')
+  }, 1500)
+}
 const post = computed(() => getBySlug(route.params.slug))
 const html = computed(() => (post.value ? render(post.value.content) : ''))
 const nav = computed(() => neighbors(route.params.slug))
@@ -26,7 +54,7 @@ const nav = computed(() => neighbors(route.params.slug))
             <el-tag v-for="t in post.tags" :key="t" size="small" effect="plain">{{ t }}</el-tag>
           </div>
         </header>
-        <div class="markdown-body" v-html="html"></div>
+        <div class="markdown-body" v-html="html" @click="copyCode"></div>
       </article>
 
       <nav class="pager">
@@ -67,6 +95,43 @@ const nav = computed(() => neighbors(route.params.slug))
   margin-right: auto;
 }
 
+:deep(.code-block) {
+  position: relative;
+}
+
+:deep(.code-block pre) {
+  margin: 0;
+}
+
+:deep(.code-copy-button) {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.72);
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+:deep(.code-copy-button:hover) {
+  background: rgba(17, 24, 39, 0.92);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+:deep(.code-copy-button.copied) {
+  background: var(--grad-brand);
+  color: var(--blog-on-brand);
+  opacity: 1;
+}
 .article-kicker {
   display: block;
   margin-bottom: 10px;
@@ -188,4 +253,5 @@ const nav = computed(() => neighbors(route.params.slug))
   }
 }
 </style>
+
 
