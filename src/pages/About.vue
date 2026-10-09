@@ -71,12 +71,6 @@ const infoRows = [
 </template>
 
 <style scoped>
-.about-text {
-  max-width: 66ch;
-  line-height: 1.85;
-  color: var(--el-text-color-regular);
-}
-
 .profile-card {
   position: relative;
   max-width: 640px;
