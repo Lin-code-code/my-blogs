@@ -18,6 +18,12 @@ export function updatePost(slug, data) {
   })
 }
 
+export function deletePost(slug) {
+  return apiRequest(`/api/v1/admin/posts/${encodeURIComponent(slug)}/`, {
+    method: 'DELETE',
+  })
+}
+
 export function listDrafts() {
   return apiRequest('/api/v1/admin/drafts/')
 }

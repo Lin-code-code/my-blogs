@@ -4,18 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuth } from '../utils/auth.js'
 import { listDrafts } from '../utils/editorApi.js'
+import { formatDateTime } from '../utils/blog.js'
 
 const route = useRoute()
 const router = useRouter()
 const { isStaff, loadCurrentUser } = useAuth()
 const drafts = ref([])
 const loading = ref(true)
-function formatDate(value) {
-  if (!value) {
-    return ''
-  }
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
-}
 
 onMounted(async () => {
   await loadCurrentUser()
@@ -53,7 +48,7 @@ onMounted(async () => {
           </div>
           <h2>{{ draft.title }}</h2>
           <p>{{ draft.summary || '暂无摘要' }}</p>
-          <span class="updated">最后更新：{{ formatDate(draft.updated_at) }}</span>
+          <span class="updated">最后更新：{{ formatDateTime(draft.updated_at) }}</span>
         </div>
         <router-link :to="{ path: '/editor', query: { slug: draft.slug } }" class="edit-link">继续编辑</router-link>
       </article>

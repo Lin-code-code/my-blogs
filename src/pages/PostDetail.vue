@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
-import { usePosts } from '../utils/blog.js'
+import { postTimeLabel, usePosts } from '../utils/blog.js'
 
 const route = useRoute()
 const { getBySlug, neighbors, render } = usePosts()
@@ -48,6 +48,7 @@ const nav = computed(() => neighbors(route.params.slug))
         <header class="article-header">
           <span class="article-kicker">Article</span>
           <h1 class="title">{{ post.title }}</h1>
+          <p v-if="postTimeLabel(post)" class="stamp">{{ postTimeLabel(post) }}</p>
           <div class="meta post-tags">
             <span class="date">{{ post.date }}</span>
             <el-tag v-if="post.category" size="small" type="info">{{ post.category }}</el-tag>
@@ -159,6 +160,12 @@ const nav = computed(() => neighbors(route.params.slug))
   height: 3px;
   border-radius: 2px;
   background: var(--grad-brand);
+}
+
+.stamp {
+  margin: -8px 0 18px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .meta {

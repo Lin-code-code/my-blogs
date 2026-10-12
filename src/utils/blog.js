@@ -26,6 +26,29 @@ md.renderer.rules.fence = (tokens, index, options) => {
 
   return `<div class="code-block"><button type="button" class="code-copy-button" data-code="${encoded}" aria-label="复制代码">复制</button>${highlighted}</div>`
 }
+
+// 统一时间显示：YYYY-MM-DD HH:mm:ss（本地时区）
+export function formatDateTime(value) {
+  if (!value) {
+    return ''
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+// 详情页和文章管理页共用：改过显示更新时间，没改过显示创建时间
+export function postTimeLabel(post) {
+  if (post.edited_at) {
+    return `更新于 ${formatDateTime(post.edited_at)}`
+  }
+  const created = formatDateTime(post.created_at)
+  return created ? `创建于 ${created}` : ''
+}
+
 function fallbackSummary(content) {
   return String(content || '')
     .replace(/[#>*`\-[\]]/g, '')

@@ -28,6 +28,10 @@ function handleCreateCommand(command) {
   }
   if (command === 'drafts') {
     router.push('/drafts')
+    return
+  }
+  if (command === 'manage') {
+    router.push('/manage')
   }
 }
 
@@ -70,7 +74,7 @@ const menus = [
             <button
               type="button"
               class="nav-item nav-dropdown-button"
-              :class="{ active: route.path.startsWith('/editor') || route.path === '/drafts' }"
+              :class="{ active: route.path.startsWith('/editor') || route.path === '/drafts' || route.path === '/manage' }"
               aria-label="创作菜单"
               aria-haspopup="menu"
             >
@@ -80,6 +84,7 @@ const menus = [
               <el-dropdown-menu>
                 <el-dropdown-item command="new">新增文章</el-dropdown-item>
                 <el-dropdown-item command="drafts">草稿箱</el-dropdown-item>
+                <el-dropdown-item command="manage">文章管理</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
