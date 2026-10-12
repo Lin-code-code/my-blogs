@@ -10,12 +10,6 @@ const router = useRouter()
 const { isStaff, loadCurrentUser } = useAuth()
 const drafts = ref([])
 const loading = ref(true)
-const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-
-function editUrl(draft) {
-  return `${apiBase}/admin/blog/post/${draft.id}/change/`
-}
-
 function formatDate(value) {
   if (!value) {
     return ''
@@ -44,7 +38,7 @@ onMounted(async () => {
   <div class="blog-container page drafts-page">
     <header class="page-head">
       <h1>草稿箱</h1>
-      <p>这里只显示未发布文章，点击“继续编辑”进入后台编辑。</p>
+      <p>这里只显示未发布文章，点击“继续编辑”继续写作。</p>
     </header>
 
     <div v-if="loading" class="loading">正在加载草稿...</div>
@@ -61,7 +55,7 @@ onMounted(async () => {
           <p>{{ draft.summary || '暂无摘要' }}</p>
           <span class="updated">最后更新：{{ formatDate(draft.updated_at) }}</span>
         </div>
-        <a :href="editUrl(draft)" target="_blank" rel="noopener" class="edit-link">继续编辑</a>
+        <router-link :to="{ path: '/editor', query: { slug: draft.slug } }" class="edit-link">继续编辑</router-link>
       </article>
     </div>
   </div>

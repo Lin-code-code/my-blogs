@@ -15,7 +15,7 @@ import 'md-editor-v3/lib/style.css'
 import { useAuth } from '../utils/auth.js'
 import { useDarkMode } from '../utils/useDarkMode.js'
 import { usePosts } from '../utils/blog.js'
-import { createPost } from '../utils/editorApi.js'
+import { createPost, getPost, updatePost } from '../utils/editorApi.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,6 +33,9 @@ const form = ref({
 })
 const tagsText = ref('')
 const saving = ref(false)
+// 带 ?slug= 进来就是改稿，否则是新增
+const editSlug = ref(String(route.query.slug || '').trim())
+const isEditing = computed(() => Boolean(editSlug.value))
 const editorTheme = computed(() => (isDark.value ? 'dark' : 'light'))
 
 function parseTags(text) {
@@ -61,7 +64,7 @@ async function save() {
 
   saving.value = true
   try {
-    const created = await createPost({
+    const data = {
       title: form.value.title.trim(),
       date: form.value.date,
       category: form.value.category.trim() || '未分类',
@@ -69,10 +72,14 @@ async function save() {
       summary: form.value.summary.trim(),
       draft: form.value.draft,
       content: form.value.content,
-    })
+    }
+    const saved = isEditing.value
+      ? await updatePost(editSlug.value, data)
+      : await createPost(data)
     await loadPosts()
-    ElMessage.success('文章已保存')
-    router.push(`/post/${created.slug}`)
+    ElMessage.success(isEditing.value ? '文章已更新' : '文章已保存')
+    // 草稿不在公开列表里，保存后回草稿箱；已发布文章直接进详情页
+    router.push(form.value.draft ? '/drafts' : `/post/${saved.slug}`)
   } catch (error) {
     ElMessage.error(error.message || '保存失败')
   } finally {
@@ -92,6 +99,26 @@ onMounted(async () => {
   await loadCurrentUser()
   if (!isStaff.value) {
     router.replace({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+
+  if (!isEditing.value) {
+    return
+  }
+
+  try {
+    const post = await getPost(editSlug.value)
+    form.value = {
+      title: post.title,
+      date: post.date,
+      category: post.category,
+      summary: post.summary,
+      draft: post.draft,
+      content: post.content,
+    }
+    tagsText.value = (post.tags || []).join(', ')
+  } catch (error) {
+    ElMessage.error(error.message || '文章加载失败')
   }
 })
 </script>
@@ -101,7 +128,7 @@ onMounted(async () => {
     <header class="editor-header">
       <el-button type="primary" @click="goBack">返回</el-button>
       <div class="editor-title">
-        <h1>添加文章</h1>
+        <h1>{{ isEditing ? '修改文章' : '添加文章' }}</h1>
       </div>
       <el-button type="primary" :loading="saving" @click="save">保存文章</el-button>
     </header>

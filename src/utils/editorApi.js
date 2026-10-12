@@ -7,6 +7,17 @@ export function createPost(data) {
   })
 }
 
+export function getPost(slug) {
+  return apiRequest(`/api/v1/admin/posts/${encodeURIComponent(slug)}/`)
+}
+
+export function updatePost(slug, data) {
+  return apiRequest(`/api/v1/admin/posts/${encodeURIComponent(slug)}/`, {
+    method: 'PUT',
+    body: data,
+  })
+}
+
 export function listDrafts() {
   return apiRequest('/api/v1/admin/drafts/')
 }
