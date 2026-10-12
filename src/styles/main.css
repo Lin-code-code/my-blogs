@@ -177,6 +177,8 @@ html.dark :focus-visible {
   border-radius: 8px;
 }
 
+/* 正文一级标题与二级标题共用一套样式，手写 `# 标题` 时不会与页面标题风格脱节 */
+.markdown-body h1,
 .markdown-body h2 {
   position: relative;
   margin: 40px 0 14px;
@@ -184,6 +186,11 @@ html.dark :focus-visible {
   font-size: 21px;
 }
 
+.markdown-body h1 {
+  font-size: 25px;
+}
+
+.markdown-body h1::before,
 .markdown-body h2::before {
   content: '';
   position: absolute;
