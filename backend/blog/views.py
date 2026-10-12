@@ -6,7 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from .models import Post
 
@@ -71,50 +71,97 @@ def auth_logout(request):
     return JsonResponse({"authenticated": False, "username": "", "is_staff": False})
 
 
-@require_POST
-def post_create(request):
-    if not request.user.is_authenticated or not request.user.is_staff:
-        return JsonResponse({"message": "请先登录管理员账号"}, status=403)
-
-    try:
-        payload = _read_json(request)
-    except (ValueError, json.JSONDecodeError) as exc:
-        status = 413 if "过长" in str(exc) else 400
-        return JsonResponse({"message": str(exc)}, status=status)
-
+def _post_fields(payload):
+    """校验并归一化文章字段，数据非法时抛 ValueError，消息直接回给前端。"""
     title = str(payload.get("title") or "").strip()
-    content = str(payload.get("content") or "")
     if not title:
-        return JsonResponse({"message": "标题不能为空"}, status=400)
+        raise ValueError("标题不能为空")
+
+    content = str(payload.get("content") or "")
     if not content.strip():
-        return JsonResponse({"message": "正文不能为空"}, status=400)
+        raise ValueError("正文不能为空")
 
     raw_date = payload.get("date")
     if isinstance(raw_date, str):
         try:
             raw_date = date.fromisoformat(raw_date)
         except ValueError:
-            return JsonResponse({"message": "日期格式必须是 YYYY-MM-DD"}, status=400)
+            raise ValueError("日期格式必须是 YYYY-MM-DD") from None
     if isinstance(raw_date, datetime):
         raw_date = raw_date.date()
     if not isinstance(raw_date, date):
-        return JsonResponse({"message": "日期不能为空"}, status=400)
+        raise ValueError("日期不能为空")
 
     tags = payload.get("tags", [])
     if not isinstance(tags, list):
-        return JsonResponse({"message": "标签必须是数组"}, status=400)
-    tags = [str(tag).strip() for tag in tags if str(tag).strip()]
+        raise ValueError("标签必须是数组")
 
-    post = Post.objects.create(
-        title=title,
-        date=raw_date,
-        tags=tags,
-        category=str(payload.get("category") or "未分类"),
-        summary=str(payload.get("summary") or ""),
-        draft=bool(payload.get("draft", False)),
-        content=content,
-    )
+    return {
+        "title": title,
+        "date": raw_date,
+        "tags": [str(tag).strip() for tag in tags if str(tag).strip()],
+        "category": str(payload.get("category") or "未分类"),
+        "summary": str(payload.get("summary") or ""),
+        "draft": bool(payload.get("draft", False)),
+        "content": content,
+    }
+
+
+def _read_post_fields(request):
+    """解析请求体并校验文章字段，返回 (fields, error_response)，二者必有一个为 None。"""
+    try:
+        return _post_fields(_read_json(request)), None
+    except (ValueError, json.JSONDecodeError) as exc:
+        status = 413 if "过长" in str(exc) else 400
+        return None, JsonResponse({"message": str(exc)}, status=status)
+
+
+@require_POST
+def post_create(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"message": "请先登录管理员账号"}, status=403)
+
+    fields, error = _read_post_fields(request)
+    if error:
+        return error
+
+    post = Post.objects.create(**fields)
     return JsonResponse({"slug": post.slug}, status=201)
+
+
+@require_http_methods(["GET", "PUT"])
+def post_detail(request, slug):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"message": "请先登录管理员账号"}, status=403)
+
+    try:
+        post = Post.objects.get(slug=slug)
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "文章不存在"}, status=404)
+
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "slug": post.slug,
+                "title": post.title,
+                "date": post.date.isoformat(),
+                "tags": post.tags,
+                "category": post.category,
+                "summary": post.summary,
+                "draft": post.draft,
+                "content": post.content,
+            },
+            json_dumps_params={"ensure_ascii": False},
+        )
+
+    fields, error = _read_post_fields(request)
+    if error:
+        return error
+
+    for name, value in fields.items():
+        setattr(post, name, value)
+    post.save()
+    return JsonResponse({"slug": post.slug})
 
 
 @require_POST

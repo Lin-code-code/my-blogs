@@ -119,6 +119,58 @@ class AuthPostApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Post.objects.filter(title="新文章", slug=response.json()["slug"]).exists())
+    def test_guest_cannot_read_draft(self):
+        Post.objects.create(slug="secret", title="草稿", date="2026-10-01", content="正文", draft=True)
+
+        response = self.client.get("/api/v1/admin/posts/secret/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_staff_can_load_and_update_post(self):
+        self.client.force_login(self.staff)
+        post = Post.objects.create(
+            slug="edit-me",
+            title="旧标题",
+            date="2026-10-01",
+            tags=["旧标签"],
+            category="技术",
+            summary="旧摘要",
+            content="旧正文",
+            draft=True,
+        )
+
+        loaded = self.client.get("/api/v1/admin/posts/edit-me/")
+        self.assertEqual(loaded.status_code, 200)
+        self.assertEqual(loaded.json()["title"], "旧标题")
+        self.assertEqual(loaded.json()["content"], "旧正文")
+
+        response = self.client.put(
+            "/api/v1/admin/posts/edit-me/",
+            data=json.dumps({**self.post_payload(), "title": "新标题", "draft": True}),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=self.csrf(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        post.refresh_from_db()
+        self.assertEqual(post.title, "新标题")
+        self.assertEqual(post.content, "正文")
+        self.assertEqual(post.tags, ["Django"])
+        self.assertEqual(post.slug, "edit-me")
+
+    def test_update_missing_post_returns_404(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.put(
+            "/api/v1/admin/posts/nope/",
+            data=json.dumps(self.post_payload()),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=self.csrf(),
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+
 class AccountUpdateTests(TestCase):
     def setUp(self):
         self.client = Client(enforce_csrf_checks=True)
