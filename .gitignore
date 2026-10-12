@@ -8,6 +8,7 @@ dist
 
 # 本地变更记录，不入库
 changelog.md
+DEPLOY.md
 
 backend/.venv/
 backend/staticfiles/
