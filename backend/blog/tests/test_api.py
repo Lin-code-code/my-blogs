@@ -32,7 +32,17 @@ class PostApiTests(TestCase):
         self.assertEqual([item["slug"] for item in response.json()], ["published"])
         self.assertEqual(
             set(response.json()[0]),
-            {"slug", "title", "date", "tags", "category", "summary", "content"},
+            {
+                "slug",
+                "title",
+                "date",
+                "tags",
+                "category",
+                "summary",
+                "content",
+                "created_at",
+                "edited_at",
+            },
         )
 
 
@@ -169,6 +179,50 @@ class AuthPostApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_new_post_has_no_edited_at(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            "/api/v1/admin/posts/",
+            data=json.dumps(self.post_payload()),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=self.csrf(),
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNone(Post.objects.get(slug=response.json()["slug"]).edited_at)
+
+    def test_update_marks_edited_at(self):
+        self.client.force_login(self.staff)
+        post = Post.objects.create(slug="edit-me", title="旧标题", date="2026-10-01", content="旧正文")
+
+        response = self.client.put(
+            "/api/v1/admin/posts/edit-me/",
+            data=json.dumps({**self.post_payload(), "title": "新标题"}),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=self.csrf(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        post.refresh_from_db()
+        self.assertIsNotNone(post.edited_at)
+
+    def test_guest_cannot_delete_post(self):
+        Post.objects.create(slug="keep-me", title="保留", date="2026-10-01", content="正文")
+
+        response = self.client.delete("/api/v1/admin/posts/keep-me/", HTTP_X_CSRFTOKEN=self.csrf())
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Post.objects.filter(slug="keep-me").exists())
+
+    def test_staff_can_delete_post(self):
+        self.client.force_login(self.staff)
+        Post.objects.create(slug="drop-me", title="删除", date="2026-10-01", content="正文")
+
+        response = self.client.delete("/api/v1/admin/posts/drop-me/", HTTP_X_CSRFTOKEN=self.csrf())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Post.objects.filter(slug="drop-me").exists())
 
 
 class AccountUpdateTests(TestCase):

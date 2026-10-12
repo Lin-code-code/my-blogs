@@ -35,7 +35,17 @@ def post_list(request):
     posts = list(
         Post.objects.filter(draft=False)
         .order_by("-date", "-id")
-        .values("slug", "title", "date", "tags", "category", "summary", "content")
+        .values(
+            "slug",
+            "title",
+            "date",
+            "tags",
+            "category",
+            "summary",
+            "content",
+            "created_at",
+            "edited_at",
+        )
     )
     return JsonResponse(posts, safe=False, json_dumps_params={"ensure_ascii": False})
 
@@ -129,7 +139,7 @@ def post_create(request):
     return JsonResponse({"slug": post.slug}, status=201)
 
 
-@require_http_methods(["GET", "PUT"])
+@require_http_methods(["GET", "PUT", "DELETE"])
 def post_detail(request, slug):
     if not request.user.is_authenticated or not request.user.is_staff:
         return JsonResponse({"message": "请先登录管理员账号"}, status=403)
@@ -153,6 +163,10 @@ def post_detail(request, slug):
             },
             json_dumps_params={"ensure_ascii": False},
         )
+
+    if request.method == "DELETE":
+        post.delete()
+        return JsonResponse({"slug": slug})
 
     fields, error = _read_post_fields(request)
     if error:

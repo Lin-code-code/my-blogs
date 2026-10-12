@@ -14,12 +14,16 @@ class Post(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 为空表示创建后从没改过，详情页据此显示“创建于”还是“更新于”
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-date", "-id"]
         indexes = [models.Index(fields=["draft", "-date"])]
 
     def save(self, *args, **kwargs):
+        if not self._state.adding:
+            self.edited_at = timezone.now()
         if not self.slug:
             base = timezone.localtime().strftime("%Y%m%d%H%M%S")
             slug = base
