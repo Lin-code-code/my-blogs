@@ -11,6 +11,6 @@
 # 部署前把 YOUR_SERVER_IP 换成后端公网 IP
 [[redirects]]
   from = "/api/*"
-  to = "http://YOUR_SERVER_IP:8000/api/:splat"
+  to = "http://120.79.140.122:8000/api/:splat"
   status = 200
   force = true
