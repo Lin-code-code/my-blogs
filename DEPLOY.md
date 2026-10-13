@@ -93,6 +93,8 @@ docker compose logs -f web
 
 `--wait` 会等 db 变成 healthy、web 通过健康检查才返回，任何一个没就绪就以非零退出，比"命令成功但服务其实没起来"好排查。
 
+部署只用本地已有的镜像：`db` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`web` 是构建出来的，构建时默认也不会拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`。
+
 ```bash
 curl http://127.0.0.1:8000/api/v1/posts/
 curl http://<服务器IP>:8000/api/v1/posts/
