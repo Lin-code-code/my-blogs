@@ -6,14 +6,15 @@
 
 ```text
 浏览器 → https://lin-blog.netlify.app/          Netlify 静态站点
-              └─ /api/* 由 Netlify 代理 ──────→ http://<服务器IP>:8000  blogs-app 容器
-                                                          └─ pgsql 容器（PostgreSQL）
-                                                                └─ 数据落在 ./data/postgres
+              └─ /api/* 由 Netlify 代理 ──────→ http://<服务器IP>:80    nginx 容器
+                                                          └─ blogs-app 容器（Django + gunicorn）
+                                                                └─ pgsql 容器（PostgreSQL）
+                                                                      └─ 数据落在 ./data/postgres
 ```
 
-Compose 里两个服务分别叫 `blogs-app`（Django + gunicorn）和 `pgsql`（PostgreSQL），都接在自定义网络 `blogs-net` 上。
+Compose 里三个服务分别叫 `nginx`（反向代理）、`blogs-app`（Django + gunicorn）和 `pgsql`（PostgreSQL），都接在自定义网络 `blogs-net` 上。
 
-前端所有请求都发给 Netlify 自己的域名，由 Netlify 在服务端转发到后端，所以浏览器视角始终同源，`SameSite=Lax` 的 Session/CSRF Cookie 能正常工作。
+前端所有请求都发给 Netlify 自己的域名，由 Netlify 在服务端转发到 nginx、再由 nginx 转给 blogs-app，所以浏览器视角始终同源，`SameSite=Lax` 的 Session/CSRF Cookie 能正常工作。
 
 ## 服务器准备
 
@@ -21,7 +22,7 @@ Compose 里两个服务分别叫 `blogs-app`（Django + gunicorn）和 `pgsql`�
 - 已安装 Docker 和 Docker Compose 插件
 - 已安装 git：`git --version || sudo apt update && sudo apt install -y git`（RHEL 系用 `dnf install -y git`）
 - 部署目录 `/web-project/my-blogs`
-- 本地已备好两个基础镜像：`postgres:18.6`、`python:3.14.8-slim-trixie`
+- 本地已备好三个基础镜像：`postgres:18.6`、`python:3.14.8-slim-trixie`、`nginx:alpine`
 
 ## 一、拉代码
 
@@ -78,13 +79,15 @@ sudo chown -R 999:999 /web-project/my-blogs/data/postgres
 
 ## 四、放行端口
 
-`blogs-app` 监听宿主 `8000`，需要在服务器防火墙和安全组放行 TCP 8000，否则 Netlify 代理和 Netlify 构建都连不上。
+`nginx` 监听宿主 `80`，需要在服务器防火墙和安全组放行 TCP 80，否则 Netlify 代理和 Netlify 构建都连不上。
+
+后端 8000 只在 compose 内网可达，不要对外放行——放行了就等于绕过 nginx，限流和端口收敛都白做。
 
 ```bash
-sudo ufw allow 8000/tcp        # 用 ufw 的话
+sudo ufw allow 80/tcp          # 用 ufw 的话
 ```
 
-云服务器还要在控制台安全组里放行。数据库端口不要对外放行。
+云服务器还要在控制台安全组里放行 80。数据库端口不要对外放行。
 
 ## 五、启动
 
@@ -96,7 +99,7 @@ docker compose logs -f blogs-app
 
 首次构建要装 pip 依赖，可能要几分钟。`--wait` 会等 `pgsql` 变成 healthy、`blogs-app` 通过健康检查才返回，任何一个没就绪就以非零退出，比"命令成功但服务其实没起来"好排查；120 秒不够就改成 `--wait-timeout 300`。
 
-**镜像来源**：`pgsql` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`blogs-app` 是构建出来的，构建时默认也不拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`。所以正常部署过程中不会访问 Docker Hub。
+**镜像来源**：`pgsql` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`blogs-app` 是构建出来的，构建时默认也不拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`；`nginx` 同样设了 `pull_policy: missing`，本地有 `nginx:alpine` 就直接用，缺了先 `docker pull nginx:alpine`。所以正常部署过程中不会访问 Docker Hub。
 
 日志里应依次出现：
 
@@ -111,11 +114,12 @@ Listening at: http://0.0.0.0:8000
 
 ```bash
 docker compose ps
-curl -s http://127.0.0.1:8000/api/v1/posts/
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/api/v1/admin/posts/hello-world/
+curl -s http://127.0.0.1/api/v1/posts/
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/api/v1/admin/posts/hello-world/
+curl -s -m 3 -o /dev/null -w "%{http_code}\n" http://<服务器公网IP>:8000/api/v1/posts/   # 应该连不上，说明 8000 没有对外暴露
 ```
 
-最后一条 `403`（未登录）才对。返回 404 说明代码不对；返回 500 通常是迁移没跑，执行 `docker compose exec blogs-app python manage.py migrate`。
+第二条 `403`（未登录）才对；最后一条连不上（超时或连接被拒）才说明 8000 已经不外露。返回 404 说明代码不对；返回 500 通常是迁移没跑，执行 `docker compose exec blogs-app python manage.py migrate`。
 
 ## 六、建管理员并导入示例文章
 
@@ -134,8 +138,8 @@ docker compose exec blogs-app python manage.py import_posts /tmp/seed-posts
 
 ## 七、配置 Netlify
 
-1. `netlify.toml` 里的 `/api/*` 代理目标要指向服务器公网 IP。
-2. 站点环境变量：`BLOG_API_BASE_URL=http://<服务器IP>:8000`，`VITE_API_BASE_URL` 留空。
+1. `netlify.toml` 里的 `/api/*` 代理目标要指向服务器公网 IP，不带端口（走 nginx 的 80）。
+2. 站点环境变量：`BLOG_API_BASE_URL=http://<服务器IP>`（同样不带端口），`VITE_API_BASE_URL` 留空。
 3. `VITE_BASE_PATH` 和 `NODE_VERSION` 已写在 `netlify.toml`，不用在环境变量里重复设。
 
 `VITE_API_BASE_URL` 一定要留空。填成后端地址会变成跨域直连，Cookie 属于第三方 Cookie，Safari 和 Chrome 会拦截，登录会随机失效。
@@ -151,6 +155,8 @@ cd /web-project/my-blogs
 git pull
 docker compose up -d --build --wait --wait-timeout 120 blogs-app
 ```
+
+只改了后端代码时，命令末尾可以加 `blogs-app` 只重建这一个服务；改过 `nginx/blog.conf` 就不要加，整体重建一次，否则 nginx 容器还挂着旧配置。
 
 迁移和静态文件收集由 `entrypoint.sh` 自动执行，不用手动跑。前端改动只要推到 GitHub，Netlify 会自动构建。
 
@@ -182,11 +188,15 @@ docker compose exec -T pgsql pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F)
 
 ## 常见问题
 
-**登录后立刻掉登录态**：检查 `DJANGO_COOKIE_SECURE` 是否为 `0`，以及 `VITE_API_BASE_URL` 是否留空。
+**登录后立刻掉登录态**：检查 `DJANGO_COOKIE_SECURE` 是否为 `0`，`VITE_API_BASE_URL` 是否留空，以及 `nginx/blog.conf` 里有没有保留 `proxy_set_header X-Forwarded-Proto $scheme;`——漏了它，Netlify 传下来的 `https` 会让 Django 给 Cookie 加 `Secure`，HTTP 下就存不下来。
 
-**Netlify 构建失败在 sync-content**：后端没起，或 8000 端口没放行，Netlify 构建机拉不到文章接口。
+**Netlify 构建失败在 sync-content**：后端没起，或 80 端口没放行，Netlify 构建机拉不到文章接口。
 
-**前端 /api/ 返回 502**：`netlify.toml` 里的 IP 不对，或安全组没放行 8000。
+**前端 /api/ 返回 502**：`netlify.toml` 里的 IP 不对，或安全组没放行 80，或者 `nginx` 容器没起来（`docker compose ps` 看一眼）。
+
+**接口返回 429**：nginx 限流触发了——登录接口每分钟 5 次（burst 3），其余 `/api/` 每秒 20 次（burst 40）。一般是多个访客共用同一个出口 IP 被算成一个人，或者有人在试登录密码；调 `nginx/blog.conf` 里的 zone 参数后重建 `nginx` 容器。`/admin/` 不在限流范围内，被限流时还能从 Admin 后台维护文章。
+
+**登录后能进后台但站内写文章失败**：站内写操作走 `/api/`（受限流），Admin 走 `/admin/`（不限流）。先看是不是本地网络出口 IP 被限了。
 
 **blogs-app 一直 unhealthy，访问日志里全是 400**：健康检查是用 `127.0.0.1` 探接口的，`DJANGO_ALLOWED_HOSTS` 必须包含 `127.0.0.1`，否则 Django 判定 Host 非法直接返回 400。
 
@@ -200,4 +210,4 @@ docker compose exec -T pgsql pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F)
 
 ## 安全提醒
 
-后端目前是明文 HTTP，Netlify 代理到服务器的这一段没有加密，管理员密码和会话 Cookie 会以明文经过公网。能用，但不理想。等你有域名之后，在服务器前面加一层 Caddy 自动申请 Let's Encrypt 证书，把 `netlify.toml` 的目标改成 `https://`，并把 `DJANGO_COOKIE_SECURE` 改回 `1`，这段风险就消掉了。
+nginx 目前只做路由、限流和端口收敛，这一段仍是明文 HTTP：Netlify 代理到 nginx 之间没有加密，管理员密码和会话 Cookie 会以明文经过公网。等有域名之后，在 nginx 上加 443 和证书（certbot），把 `netlify.toml` 的目标改成 `https://`，并把 `DJANGO_COOKIE_SECURE` 改回 `1`，这段风险就消掉了。

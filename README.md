@@ -10,7 +10,7 @@ Vue 3 + Vite 前端，配一个独立的 Django + PostgreSQL 后端。游客可�
 - md-editor-v3（双栏 Markdown 编辑器）
 - Django 5.2 + gunicorn + WhiteNoise
 - PostgreSQL 18（本地与 Docker 部署一致）
-- 前端托管在 Netlify，后端用 Docker Compose 跑在自有服务器
+- 前端托管在 Netlify，后端用 Docker Compose 跑在自有服务器，对外由 nginx 反向代理
 
 ## 功能概览
 
@@ -112,13 +112,14 @@ Django Admin：http://127.0.0.1:8000/admin/
 
 ## 部署
 
-前端托管在 Netlify，后端用 Docker Compose 跑在服务器上，两者通过 Netlify 的 `/api/*` 代理保持同源。
+前端托管在 Netlify，后端用 Docker Compose 跑在服务器上。Netlify 的 `/api/*` 代理先打到服务器上的 nginx（80 端口），再由 nginx 转给 `blogs-app`，浏览器视角始终同源。
 
-- **后端**：代码由服务器直接 `git pull`（仓库公开，无需凭据），`docker compose up -d --build --wait --wait-timeout 120` 一键重建。Compose 里两个服务分别叫 `blogs-app`（Django + gunicorn）和 `pgsql`（PostgreSQL）。`backend/entrypoint.sh` 会自动执行 migrate 和 collectstatic，然后启动 gunicorn，静态文件交给 WhiteNoise。
+- **后端**：代码由服务器直接 `git pull`（仓库公开，无需凭据），`docker compose up -d --build --wait --wait-timeout 120` 一键重建。Compose 里三个服务分别叫 `nginx`（反向代理）、`blogs-app`（Django + gunicorn）和 `pgsql`（PostgreSQL）。`backend/entrypoint.sh` 会自动执行 migrate 和 collectstatic，然后启动 gunicorn，静态文件交给 WhiteNoise。
 - **数据库**：PostgreSQL 18 容器，数据挂载到宿主目录 `./data/postgres`（该目录已在 `.gitignore` 中），容器删了重建数据仍在。
-- **前端**：Netlify 从 GitHub 的 `main` 分支自动构建；`netlify.toml` 里的 `/api/*` 重定向把请求转发到后端，避免跨站 Cookie 被浏览器拦截。
+- **反向代理**：`nginx/blog.conf` 在宿主监听 80，把请求转给 `blogs-app:8000`；后端 8000 不再对外放行，限流按 `X-Forwarded-For` 第一段识别真实客户端，登录接口单独限速。
+- **前端**：Netlify 从 GitHub 的 `main` 分支自动构建；`netlify.toml` 里的 `/api/*` 重定向把请求转发到 nginx（不带端口），避免跨站 Cookie 被浏览器拦截。
 
-发布流程：功能在 `develop` 分支开发，合并到 `main` 推送后 Netlify 自动重建前端，服务器再 `git pull && docker compose up -d --build blogs-app`。
+发布流程：功能在 `develop` 分支开发，合并到 `main` 推送后 Netlify 自动重建前端，服务器再 `git pull && docker compose up -d --build`（只改了后端代码时可以只重建 `blogs-app`，改了 `nginx/blog.conf` 必须整体重建）。
 
 完整步骤和生产环境变量见 `DEPLOY.md` 与 `.env.production.example`。
 
@@ -144,6 +145,9 @@ scripts/
   sync-content.mjs       构建时同步 Django 文章
   sync-content.test.mjs  同步脚本测试
 
+nginx/
+  blog.conf              反向代理：80 → blogs-app:8000，含按客户端 IP 的限流
+
 backend/
   config/                Django 配置，自动读取根目录 .env
   blog/                  文章模型、Admin、认证与文章接口
@@ -153,7 +157,7 @@ backend/
   entrypoint.sh          启动时 migrate + collectstatic + gunicorn
   requirements.txt       Python 依赖
 
-docker-compose.yml       生产编排（web + postgres），数据挂到 ./data/postgres
+docker-compose.yml       生产编排（nginx + blogs-app + pgsql），数据挂到 ./data/postgres
 netlify.toml             Netlify 构建配置与 /api/* 代理
 .env.example             本地开发配置模板
 .env.production.example  服务器生产配置模板
@@ -176,5 +180,5 @@ cd backend
 服务器上更新后端：
 
 ```bash
-cd /web-project/my-blogs && git pull && docker compose up -d --build blogs-app
+cd /web-project/my-blogs && git pull && docker compose up -d --build
 ```
