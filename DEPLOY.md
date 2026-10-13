@@ -47,7 +47,7 @@ nano .env
 | 变量 | 填什么 |
 | --- | --- |
 | `DJANGO_SECRET_KEY` | 上一步生成的随机串 |
-| `DJANGO_ALLOWED_HOSTS` | 服务器公网 IP |
+| `DJANGO_ALLOWED_HOSTS` | 服务器公网 IP，并保留 `,127.0.0.1`（容器健康检查要用） |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://lin-blog.netlify.app` |
 | `DB_PASSWORD` | 自己定的强密码 |
 | `DJANGO_COOKIE_SECURE` | 保持 `0` |
@@ -187,6 +187,8 @@ docker compose exec -T pgsql pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F)
 **Netlify 构建失败在 sync-content**：后端没起，或 8000 端口没放行，Netlify 构建机拉不到文章接口。
 
 **前端 /api/ 返回 502**：`netlify.toml` 里的 IP 不对，或安全组没放行 8000。
+
+**blogs-app 一直 unhealthy，访问日志里全是 400**：健康检查是用 `127.0.0.1` 探接口的，`DJANGO_ALLOWED_HOSTS` 必须包含 `127.0.0.1`，否则 Django 判定 Host 非法直接返回 400。
 
 **blogs-app 起不来，日志报 `failed to resolve host`**：`DB_HOST` 必须等于 PostgreSQL 的服务名，当前是 `pgsql`，改成别的名字就对不上了。
 
