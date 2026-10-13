@@ -6,10 +6,12 @@
 
 ```text
 浏览器 → https://lin-blog.netlify.app/          Netlify 静态站点
-              └─ /api/* 由 Netlify 代理 ──────→ http://<服务器IP>:8000  后端容器
-                                                        └─ db 容器（PostgreSQL）
-                                                              └─ 数据落在 ./data/postgres
+              └─ /api/* 由 Netlify 代理 ──────→ http://<服务器IP>:8000  blogs-app 容器
+                                                          └─ pgsql 容器（PostgreSQL）
+                                                                └─ 数据落在 ./data/postgres
 ```
+
+Compose 里两个服务分别叫 `blogs-app`（Django + gunicorn）和 `pgsql`（PostgreSQL），都接在自定义网络 `blogs-net` 上。
 
 前端所有请求都发给 Netlify 自己的域名，由 Netlify 在服务端转发到后端，所以浏览器视角始终同源，`SameSite=Lax` 的 Session/CSRF Cookie 能正常工作。
 
@@ -19,6 +21,7 @@
 - 已安装 Docker 和 Docker Compose 插件
 - 已安装 git：`git --version || sudo apt update && sudo apt install -y git`（RHEL 系用 `dnf install -y git`）
 - 部署目录 `/web-project/my-blogs`
+- 本地已备好两个基础镜像：`postgres:18.6`、`python:3.14.8-slim-trixie`
 
 ## 一、拉代码
 
@@ -27,7 +30,9 @@ cd /web-project/my-blogs
 git clone https://github.com/Lin-code-code/my-blogs.git .
 ```
 
-仓库是公开的，不需要任何凭据，以后更新就是在这个目录里 `git pull`。
+仓库是公开的，不需要任何凭据。
+
+**这个目录里的文件都由 Git 管理，不要在服务器上直接改。** 直接改 `docker-compose.yml` 之类被跟踪的文件，下次 `git pull` 会因"本地改动会被覆盖"直接报错。要改就在本机改、提交、推送，服务器只负责 pull。
 
 ## 二、配置 .env
 
@@ -73,7 +78,7 @@ sudo chown -R 999:999 /web-project/my-blogs/data/postgres
 
 ## 四、放行端口
 
-后端容器监听 `8000`，需要在服务器防火墙和安全组放行 TCP 8000，否则 Netlify 代理和 Netlify 构建都连不上。
+`blogs-app` 监听宿主 `8000`，需要在服务器防火墙和安全组放行 TCP 8000，否则 Netlify 代理和 Netlify 构建都连不上。
 
 ```bash
 sudo ufw allow 8000/tcp        # 用 ufw 的话
@@ -86,34 +91,46 @@ sudo ufw allow 8000/tcp        # 用 ufw 的话
 ```bash
 cd /web-project/my-blogs
 docker compose up -d --build --wait --wait-timeout 120
-docker compose logs -f web
+docker compose logs -f blogs-app
 ```
 
-首次启动会自动执行数据库迁移和静态文件收集，然后启动 Gunicorn。日志里出现 `Listening at: http://0.0.0.0:8000` 就算起来了。
+首次构建要装 pip 依赖，可能要几分钟。`--wait` 会等 `pgsql` 变成 healthy、`blogs-app` 通过健康检查才返回，任何一个没就绪就以非零退出，比"命令成功但服务其实没起来"好排查；120 秒不够就改成 `--wait-timeout 300`。
 
-`--wait` 会等 db 变成 healthy、web 通过健康检查才返回，任何一个没就绪就以非零退出，比"命令成功但服务其实没起来"好排查。
+**镜像来源**：`pgsql` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`blogs-app` 是构建出来的，构建时默认也不拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`。所以正常部署过程中不会访问 Docker Hub。
 
-部署只用本地已有的镜像：`db` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`web` 是构建出来的，构建时默认也不会拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`。
+日志里应依次出现：
+
+```text
+Applying blog.0001_initial... OK
+Applying blog.0002_post_edited_at... OK
+127 static files copied to '/app/staticfiles'.
+Listening at: http://0.0.0.0:8000
+```
+
+验证：
 
 ```bash
-curl http://127.0.0.1:8000/api/v1/posts/
-curl http://<服务器IP>:8000/api/v1/posts/
+docker compose ps
+curl -s http://127.0.0.1:8000/api/v1/posts/
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/api/v1/admin/posts/hello-world/
 ```
+
+最后一条 `403`（未登录）才对。返回 404 说明代码不对；返回 500 通常是迁移没跑，执行 `docker compose exec blogs-app python manage.py migrate`。
 
 ## 六、建管理员并导入示例文章
 
 ```bash
-docker compose exec web python manage.py createsuperuser
+docker compose exec blogs-app python manage.py createsuperuser
 ```
 
 仓库里自带两篇 markdown，导入后首页就有内容：
 
 ```bash
-docker cp /web-project/my-blogs/src/posts <web容器名>:/tmp/seed-posts
-docker compose exec web python manage.py import_posts /tmp/seed-posts
+docker cp /web-project/my-blogs/src/posts my-blogs-blogs-app-1:/tmp/seed-posts
+docker compose exec blogs-app python manage.py import_posts /tmp/seed-posts
 ```
 
-`<web容器名>` 用 `docker ps` 查，形如 `my-blogs-web-1`。
+容器名形如 `my-blogs-blogs-app-1`，用 `docker ps` 可以确认。
 
 ## 七、配置 Netlify
 
@@ -132,24 +149,32 @@ Netlify 构建时会先执行 `sync-content` 拉取文章，所以构建期间�
 ```bash
 cd /web-project/my-blogs
 git pull
-docker compose up -d --build --wait --wait-timeout 120 web
+docker compose up -d --build --wait --wait-timeout 120 blogs-app
 ```
 
 迁移和静态文件收集由 `entrypoint.sh` 自动执行，不用手动跑。前端改动只要推到 GitHub，Netlify 会自动构建。
+
+如果 `git pull` 报本地改动会被覆盖，说明有人在服务器上直接改了文件，先确认改动是否有用，再决定是提交还是丢弃：
+
+```bash
+git status
+git checkout -- <文件>      # 丢弃服务器上的本地改动
+git pull
+```
 
 ## 备份
 
 ```bash
 cd /web-project/my-blogs
-docker compose exec -T db pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F).sql
+docker compose exec -T pgsql pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F).sql
 ```
 
-数据落在宿主目录 `data/postgres`，容器删了重建数据都还在。要清理只删容器，不要手滑删掉这个目录。直接打包目录也可以，但必须先停 `db` 容器，否则可能拿到不一致的快照，所以日常备份用 `pg_dump`。
+数据落在宿主目录 `data/postgres`，容器删了重建数据都还在。要清理只删容器，不要手滑删掉这个目录。直接打包目录也可以，但必须先停 `pgsql` 容器，否则可能拿到不一致的快照，所以日常备份用 `pg_dump`。
 
 建议加一个定时备份（`crontab -e`），每天凌晨 3 点导一次，只保留两周：
 
 ```bash
-0 3 * * * cd /web-project/my-blogs && docker compose exec -T db pg_dump -U my_blogs my_blogs > /root/backup/my_blogs-$(date +\%F).sql
+0 3 * * * cd /web-project/my-blogs && docker compose exec -T pgsql pg_dump -U my_blogs my_blogs > /root/backup/my_blogs-$(date +\%F).sql
 30 3 * * * find /root/backup -name 'my_blogs-*.sql' -mtime +14 -delete
 ```
 
@@ -163,7 +188,11 @@ docker compose exec -T db pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F).sq
 
 **前端 /api/ 返回 502**：`netlify.toml` 里的 IP 不对，或安全组没放行 8000。
 
+**blogs-app 起不来，日志报 `failed to resolve host`**：`DB_HOST` 必须等于 PostgreSQL 的服务名，当前是 `pgsql`，改成别的名字就对不上了。
+
 **容器起不来报目录权限错误**：见第三步的 `chown -R 999:999`。
+
+**`git pull` 报本地改动会被覆盖**：见「日常更新」里的处理方式，根源是有人直接在服务器上改了受 Git 跟踪的文件。
 
 **Admin 静态样式丢失**：看容器启动日志里 `collectstatic` 是否报错。
 

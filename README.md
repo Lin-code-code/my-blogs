@@ -114,11 +114,11 @@ Django Admin：http://127.0.0.1:8000/admin/
 
 前端托管在 Netlify，后端用 Docker Compose 跑在服务器上，两者通过 Netlify 的 `/api/*` 代理保持同源。
 
-- **后端**：代码由服务器直接 `git pull`（仓库公开，无需凭据），`docker compose up -d --build` 一键重建。`backend/entrypoint.sh` 会自动执行 migrate 和 collectstatic，然后启动 gunicorn，静态文件交给 WhiteNoise。
+- **后端**：代码由服务器直接 `git pull`（仓库公开，无需凭据），`docker compose up -d --build --wait --wait-timeout 120` 一键重建。Compose 里两个服务分别叫 `blogs-app`（Django + gunicorn）和 `pgsql`（PostgreSQL）。`backend/entrypoint.sh` 会自动执行 migrate 和 collectstatic，然后启动 gunicorn，静态文件交给 WhiteNoise。
 - **数据库**：PostgreSQL 18 容器，数据挂载到宿主目录 `./data/postgres`（该目录已在 `.gitignore` 中），容器删了重建数据仍在。
 - **前端**：Netlify 从 GitHub 的 `main` 分支自动构建；`netlify.toml` 里的 `/api/*` 重定向把请求转发到后端，避免跨站 Cookie 被浏览器拦截。
 
-发布流程：功能在 `develop` 分支开发，合并到 `main` 推送后 Netlify 自动重建前端，服务器再 `git pull && docker compose up -d --build web`。
+发布流程：功能在 `develop` 分支开发，合并到 `main` 推送后 Netlify 自动重建前端，服务器再 `git pull && docker compose up -d --build blogs-app`。
 
 完整步骤和生产环境变量见 `DEPLOY.md` 与 `.env.production.example`。
 
@@ -176,5 +176,5 @@ cd backend
 服务器上更新后端：
 
 ```bash
-cd /web-project/my-blogs && git pull && docker compose up -d --build web
+cd /web-project/my-blogs && git pull && docker compose up -d --build blogs-app
 ```
