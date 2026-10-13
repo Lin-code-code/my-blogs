@@ -21,3 +21,6 @@ backend/.admin-credentials.local.txt
 !.env.example
 .idea/
 
+# compose 的 PostgreSQL 数据目录（bind mount，不入库）
+data/
+

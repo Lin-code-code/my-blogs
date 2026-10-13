@@ -1,31 +1,47 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18.6
     restart: unless-stopped
+    mem_limit: 768m
+    cpus: "1.0"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=50
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
 
   web:
     build: ./backend
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: "1.0"
     depends_on:
       db:
         condition: service_healthy
-    env_file: .env
+    env_file:
+      - .env
     environment:
       DB_HOST: db
       DB_PORT: 5432
+      GUNICORN_WORKERS: 3
     ports:
       - "8000:8000"
-
-volumes:
-  pgdata:
