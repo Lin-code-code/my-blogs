@@ -7,10 +7,10 @@
   # Netlify 站点部署在根路径，需要覆盖 GitHub Pages 使用的仓库子路径
   VITE_BASE_PATH = "/"
 
-# 前端同源请求 /api/*，由 Netlify 代理到后端，避免跨站 Cookie 被浏览器拦截
-# 部署前把 YOUR_SERVER_IP 换成后端公网 IP
+# 前端同源请求 /api/*，由 Netlify 代理到服务器上的 nginx（80 端口），避免跨站 Cookie 被浏览器拦截
+# 后端 8000 只在内网可达，对外一律走 nginx；部署前把下面的 IP 换成服务器公网 IP
 [[redirects]]
   from = "/api/*"
-  to = "http://120.79.140.122:8000/api/:splat"
+  to = "http://120.79.140.122/api/:splat"
   status = 200
   force = true
