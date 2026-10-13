@@ -149,7 +149,7 @@ backend/
   blog/                  文章模型、Admin、认证与文章接口
   blog/migrations/       数据库迁移
   blog/tests/            后端测试
-  Dockerfile             后端生产镜像（ubuntu:24.04 + 阿里云源）
+  Dockerfile             后端生产镜像（python:3.14.8-slim-trixie + 阿里云 pip 源）
   entrypoint.sh          启动时 migrate + collectstatic + gunicorn
   requirements.txt       Python 依赖
 
