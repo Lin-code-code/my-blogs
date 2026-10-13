@@ -85,11 +85,13 @@ sudo ufw allow 8000/tcp        # 用 ufw 的话
 
 ```bash
 cd /web-project/my-blogs
-docker compose up -d --build
+docker compose up -d --build --wait --wait-timeout 120
 docker compose logs -f web
 ```
 
 首次启动会自动执行数据库迁移和静态文件收集，然后启动 Gunicorn。日志里出现 `Listening at: http://0.0.0.0:8000` 就算起来了。
+
+`--wait` 会等 db 变成 healthy、web 通过健康检查才返回，任何一个没就绪就以非零退出，比"命令成功但服务其实没起来"好排查。
 
 ```bash
 curl http://127.0.0.1:8000/api/v1/posts/
@@ -128,7 +130,7 @@ Netlify 构建时会先执行 `sync-content` 拉取文章，所以构建期间�
 ```bash
 cd /web-project/my-blogs
 git pull
-docker compose up -d --build web
+docker compose up -d --build --wait --wait-timeout 120 web
 ```
 
 迁移和静态文件收集由 `entrypoint.sh` 自动执行，不用手动跑。前端改动只要推到 GitHub，Netlify 会自动构建。
@@ -141,6 +143,15 @@ docker compose exec -T db pg_dump -U my_blogs my_blogs > ~/backup-$(date +%F).sq
 ```
 
 数据落在宿主目录 `data/postgres`，容器删了重建数据都还在。要清理只删容器，不要手滑删掉这个目录。直接打包目录也可以，但必须先停 `db` 容器，否则可能拿到不一致的快照，所以日常备份用 `pg_dump`。
+
+建议加一个定时备份（`crontab -e`），每天凌晨 3 点导一次，只保留两周：
+
+```bash
+0 3 * * * cd /web-project/my-blogs && docker compose exec -T db pg_dump -U my_blogs my_blogs > /root/backup/my_blogs-$(date +\%F).sql
+30 3 * * * find /root/backup -name 'my_blogs-*.sql' -mtime +14 -delete
+```
+
+记得先 `mkdir -p /root/backup`。
 
 ## 常见问题
 
