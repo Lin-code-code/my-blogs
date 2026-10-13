@@ -22,7 +22,7 @@ Compose 里三个服务分别叫 `nginx`（反向代理）、`blogs-app`（Djang
 - 已安装 Docker 和 Docker Compose 插件
 - 已安装 git：`git --version || sudo apt update && sudo apt install -y git`（RHEL 系用 `dnf install -y git`）
 - 部署目录 `/web-project/my-blogs`
-- 本地已备好三个基础镜像：`postgres:18.6`、`python:3.14.8-slim-trixie`、`nginx:alpine`
+- 本地已备好三个基础镜像：`postgres:18.6`、`python:3.14.8-slim-trixie`、`nginx:1.30.5-trixie-perl`
 
 ## 一、拉代码
 
@@ -99,7 +99,7 @@ docker compose logs -f blogs-app
 
 首次构建要装 pip 依赖，可能要几分钟。`--wait` 会等 `pgsql` 变成 healthy、`blogs-app` 通过健康检查才返回，任何一个没就绪就以非零退出，比"命令成功但服务其实没起来"好排查；120 秒不够就改成 `--wait-timeout 300`。
 
-**镜像来源**：`pgsql` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`blogs-app` 是构建出来的，构建时默认也不拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`；`nginx` 同样设了 `pull_policy: missing`，本地有 `nginx:alpine` 就直接用，缺了先 `docker pull nginx:alpine`。所以正常部署过程中不会访问 Docker Hub。
+**镜像来源**：`pgsql` 显式设了 `pull_policy: missing`，本地有 `postgres:18.6` 就直接用，缺了才去远端拉；`blogs-app` 是构建出来的，构建时默认也不拉取基础镜像，本地没有 `python:3.14.8-slim-trixie` 才需要 `docker pull`；`nginx` 同样设了 `pull_policy: missing`，本地有 `nginx:1.30.5-trixie-perl` 就直接用，缺了先 `docker pull nginx:1.30.5-trixie-perl`。所以正常部署过程中不会访问 Docker Hub。
 
 日志里应依次出现：
 

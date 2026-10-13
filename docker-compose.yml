@@ -71,7 +71,7 @@ services:
       start_period: 30s
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.30.5-trixie-perl
     # 本地已有该镜像就直接用，缺了才去远端拉
     pull_policy: missing
     restart: unless-stopped
